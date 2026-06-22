@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  ambiente:
+    image: python:3.9-slim
+    container_name: ambiente
+    working_dir: /app
+    command: tail -f /dev/null
+    volumes:
+      - .:/app
+#    ports:
+#      - <HOST>:<CONTAINER>
+#      - 3000:3000
+
+
+
+# Iniciar ambiente: 
+# docker compose -f ambiente.yaml up
+
+# Conectar ambiente: 
+# docker exec -it ambiente bash
+
+# Desligar ambiente:
+# docker compose -f ambiente.yaml down
+
+# criar estrutura de pastas:
+#projeto_ia_teste/
+#├── models.py
+#├── requirements.txt
+#├── Schemas/
+#│   └── prompt_agente.yaml
+#├── Database/
+#│   ├── structure.py
+#│   └── utils.py
+#└── Workers/
+#    └── main.py
+
+# adicionar dentro de requirements:
+# pyyaml
+# pydantic
+# python-dotenv
+
+# instalar o requirements.txt
+# pip install -r requirements.txt
+
+
+# passar arquivo yaml para dentro da pasta do projeto para criar um ambiente Docker
+# executa Docker composse up -f ambiente.yaml
+# executa ./comando_conectar_ambiente.sh ( que executa o arquivo que tem dentro da pasta que conecta ao ambiente )
+
