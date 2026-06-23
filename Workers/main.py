@@ -21,7 +21,7 @@ def executar_agente_ia(mensagem_usuario: str, provedor_ia: str = "gemini"): # ex
 
     prompt_sistema = carregar_prompt(caminho_prompt, "agente_suporte")
 
-    db = VectorDatabaseHelper("banco_teste")
+    db = VectorDatabaseHelper()
     documentos = db.buscar_contexto_relevante(mensagem_usuario) # Busca na lista fake os 3 documentos mais parecidos com a pergunta do usuário
 
     contexto_formatado = "\n".join(documentos)
