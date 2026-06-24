@@ -30,7 +30,7 @@ class OpenAIModel(BaseLLM):
     def __init__(self):
         from openai import OpenAI
 
-        self.client = OpenAI()
+        self.client = OpenAI() # ja puxa a APIKEY na .env
 
     def gerar_resposta(self, prompt_sistema: str, prompt_usuario: str) -> str:
         response = self.client.responses.create(
@@ -98,9 +98,25 @@ class GeminiModel(BaseLLM): # puxando a classe da herança como parametro
         return f"[Gemini] Resposta baseada em:\n {prompt_usuario}" # mock mostrando que a resposta do Gemini foi baseada no prompt do usuario
     
 class DeepseekModel(BaseLLM):
+    def __init__(self):
+        from openai import OpenAI
+
+        self.client = OpenAI( # usa a mesma ferramenta da OpenAI para buscar o modelo e URL
+            api_key=os.getenv("DEEPSEEK_API_KEY"),
+            base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+        )
+        self.modelo = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+
     def gerar_resposta(self, prompt_sistema: str, prompt_usuario: str) -> str:
+        response = self.client.chat.completions.create(
+            model=self.modelo,
+            messages=[
+                {"role": "system", "content": prompt_sistema},
+                {"role": "user", "content": prompt_usuario},
+            ],
+        )
         print("[Log] Chamando DeepseekModel...")
-        return f"[Deepseek] Resposta baseada em:\n {prompt_usuario}"
+        return f"[Deepseek]\n {response.choices[0].message.content}"
     
 class LLMFactory: # define qual será a classe que irá trabalhar
     @staticmethod # permite chamar a classe sem antes precisar instanciar ela em uma variavel
