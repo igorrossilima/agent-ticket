@@ -1,6 +1,6 @@
-import os
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from Agents.base import Agent
@@ -58,7 +58,7 @@ class DataAnalysisTest(unittest.TestCase):
 
             self.assertIn("estorno", resultado)
         finally:
-            os.remove(caminho_arquivo)
+            Path(caminho_arquivo).unlink()
 
     def test_rejeita_arquivo_que_nao_e_txt(self):
         with patch("Agents.base.LLMFactory.criar_modelo", return_value=FakeModel()):

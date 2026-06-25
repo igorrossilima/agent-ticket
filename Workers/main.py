@@ -1,8 +1,8 @@
-import os
 import sys
+from pathlib import Path
 import yaml
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))) # volta uma pagina para importar alguma coisa dentro de outro arquivo
+sys.path.append(str(Path(__file__).resolve().parent.parent)) # volta uma pagina para importar alguma coisa dentro de outro arquivo
 
 from models import LLMFactory
 from Database.utils import VectorDatabaseHelper
@@ -15,9 +15,7 @@ def carregar_prompt(caminho_arquivo: str, nome_agente: str) -> str: # busca o ca
     return schemas[nome_agente]["content"]
 
 def executar_agente_ia(mensagem_usuario: str, provedor_ia: str = "gemini"): # executa o agente de IA buscando a mensagem do usuario e definindo default para gemini o agente
-    caminho_prompt = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../Schemas/prompt_agente.yaml") # pega o diretorio atual junta com ".." para voltar a pasta e depois transforma em abosulto o caminho
-    )
+    caminho_prompt = Path(__file__).resolve().parent.parent / "Schemas" / "prompt_agente.yaml"
 
     prompt_sistema = carregar_prompt(caminho_prompt, "agente_suporte")
 

@@ -1,6 +1,7 @@
 import math
 import re
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from Database.structure import DocumentoRAG
@@ -20,25 +21,24 @@ class BaseChunker(ABC):
         return texto.strip()
 
 
+@dataclass
 class RecursiveChunker(BaseChunker):
-    def __init__(
-        self,
-        tamanho_chunk: int = 1000,
-        sobreposicao: int = 100,
-        separadores: Optional[List[str]] = None,
-    ):
-        if tamanho_chunk <= 0:
+    tamanho_chunk: int = 1000
+    sobreposicao: int = 100
+    separadores: Optional[List[str]] = None
+
+    def __post_init__(self):
+        if self.tamanho_chunk <= 0:
             raise ValueError("O tamanho do chunk precisa ser maior que zero.")
 
-        if sobreposicao < 0:
+        if self.sobreposicao < 0:
             raise ValueError("A sobreposição não pode ser negativa.")
 
-        if sobreposicao >= tamanho_chunk:
+        if self.sobreposicao >= self.tamanho_chunk:
             raise ValueError("A sobreposição precisa ser menor que o tamanho do chunk.")
 
-        self.tamanho_chunk = tamanho_chunk
-        self.sobreposicao = sobreposicao
-        self.separadores = separadores or ["\n\n", "\n", ". ", " ", ""]
+        if self.separadores is None:
+            self.separadores = ["\n\n", "\n", ". ", " ", ""]
 
     def gerar_chunks(self, texto: str) -> List[str]:
         texto = self._validar_texto(texto)
@@ -113,22 +113,18 @@ class RecursiveChunker(BaseChunker):
         return proxima_parte
 
 
+@dataclass
 class SemanticChunker(BaseChunker):
-    def __init__(
-        self,
-        embedding_model: BaseEmbeddingModel,
-        tamanho_chunk: int = 1000,
-        limite_similaridade: float = 0.75,
-    ):
-        if tamanho_chunk <= 0:
+    embedding_model: BaseEmbeddingModel
+    tamanho_chunk: int = 1000
+    limite_similaridade: float = 0.75
+
+    def __post_init__(self):
+        if self.tamanho_chunk <= 0:
             raise ValueError("O tamanho do chunk precisa ser maior que zero.")
 
-        if not 0 <= limite_similaridade <= 1:
+        if not 0 <= self.limite_similaridade <= 1:
             raise ValueError("O limite de similaridade precisa estar entre 0 e 1.")
-
-        self.embedding_model = embedding_model
-        self.tamanho_chunk = tamanho_chunk
-        self.limite_similaridade = limite_similaridade
 
     def gerar_chunks(self, texto: str) -> List[str]:
         texto = self._validar_texto(texto)
@@ -178,9 +174,12 @@ class SemanticChunker(BaseChunker):
         return produto / (norma_a * norma_b)
 
 
+@dataclass
 class Chunking:
-    def __init__(self, chunker: Optional[BaseChunker] = None):
-        self.chunker = chunker or RecursiveChunker()
+    chunker: Optional[BaseChunker] = None
+
+    def __post_init__(self):
+        self.chunker = self.chunker or RecursiveChunker()
 
     def gerar_chunks(self, texto: str) -> List[str]:
         return self.chunker.gerar_chunks(texto)

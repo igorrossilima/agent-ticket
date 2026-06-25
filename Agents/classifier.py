@@ -1,8 +1,8 @@
-import os
 import sys
+from pathlib import Path
 from typing import Any, Dict, Union
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from Agents.base import Agent
 

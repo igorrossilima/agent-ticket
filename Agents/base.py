@@ -1,11 +1,11 @@
 import json
-import os
 import sys
+from pathlib import Path
 from typing import Any, Dict
 
 import yaml
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from models import LLMFactory
 
@@ -13,15 +13,13 @@ class Agent:
     def __init__(self, nome_agente: str, provedor_ia: str = "openai"):
         self.nome_agente = nome_agente
         self.provedor_ia = provedor_ia
-        self.caminho_prompt = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../Schemas/prompt_agente.yaml")
-        )
+        self.caminho_prompt = Path(__file__).resolve().parent.parent / "Schemas" / "prompt_agente.yaml"
         self.prompt = self.carregar_prompt(self.caminho_prompt, self.nome_agente)
         self.modelo_ia = LLMFactory.criar_modelo(self.provedor_ia)
 
     @staticmethod
     def carregar_prompt(caminho_arquivo: str, nome_agente: str) -> Dict[str, str]:
-        with open(caminho_arquivo, "r", encoding="utf-8") as file:
+        with Path(caminho_arquivo).open("r", encoding="utf-8") as file:
             schemas = yaml.safe_load(file)
 
         if not schemas or nome_agente not in schemas:

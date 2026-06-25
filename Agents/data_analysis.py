@@ -1,8 +1,8 @@
-import os
 import sys
+from pathlib import Path
 from typing import Dict, Iterable
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from Agents.base import Agent
 
@@ -38,11 +38,12 @@ class DataAnalysis(Agent):
         if not caminho_arquivo or not caminho_arquivo.strip():
             raise ValueError("O caminho do arquivo não pode ser vazio.")
 
-        if not caminho_arquivo.lower().endswith(".txt"):
+        caminho = Path(caminho_arquivo)
+
+        if caminho.suffix.lower() != ".txt":
             raise ValueError("O arquivo da conversa precisa estar no formato .txt.")
 
-        with open(caminho_arquivo, "r", encoding="utf-8") as file:
-            return file.read()
+        return caminho.read_text(encoding="utf-8")
 
 
 def executar_analise_conversa(
