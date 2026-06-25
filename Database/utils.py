@@ -2,6 +2,7 @@ import os
 import uuid
 from typing import Any, Dict, Iterable, List, Optional
 
+from Database.chunkers import BaseChunker, Chunking
 from Database.structure import DocumentoRAG
 from models import BaseEmbeddingModel, EmbeddingFactory
 
@@ -44,6 +45,22 @@ class VectorDatabaseHelper:
 
     def indexar_documento(self, documento: DocumentoRAG) -> None:
         self.indexar_documentos([documento])
+
+    def indexar_texto(
+        self,
+        texto: str,
+        documento_id: str,
+        metadados: Optional[Dict[str, Any]] = None,
+        chunker: Optional[BaseChunker] = None,
+    ) -> List[DocumentoRAG]:
+        documentos = Chunking(chunker=chunker).gerar_documentos(
+            texto=texto,
+            documento_id=documento_id,
+            metadados=metadados,
+        )
+        self.indexar_documentos(documentos)
+
+        return documentos
 
     def indexar_documentos(self, documentos: Iterable[DocumentoRAG]) -> None:
         documentos = list(documentos)

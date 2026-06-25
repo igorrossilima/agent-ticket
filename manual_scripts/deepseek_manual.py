@@ -1,8 +1,13 @@
-from models import OpenAIModel
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from models import DeepseekModel
 
 
 def main():
-    modelo = OpenAIModel()
+    modelo = DeepseekModel()
 
     resposta = modelo.gerar_resposta(
         prompt_sistema="Responda apenas com a palavra OK.",
