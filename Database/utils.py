@@ -1,6 +1,7 @@
 from typing import Any, Dict, Iterable, List, Optional
 
 from Database.chunkers import BaseChunker
+from Database.ingestion import MarkdownDocumentReader
 from Database.indexer import DocumentIndexer
 from Database.retriever import DocumentRetriever
 from Database.structure import DocumentoRAG
@@ -58,6 +59,29 @@ class VectorDatabaseHelper:
             texto=texto,
             documento_id=documento_id,
             metadados=metadados,
+            chunker=chunker,
+        )
+
+    def indexar_markdown(
+        self,
+        caminho_arquivo: str,
+        documento_id: Optional[str] = None,
+        metadados: Optional[Dict[str, Any]] = None,
+        chunker: Optional[BaseChunker] = None,
+    ) -> List[DocumentoRAG]:
+        documento = MarkdownDocumentReader().read(
+            caminho_arquivo=caminho_arquivo,
+            documento_id=documento_id,
+        )
+        metadados_indexacao = {
+            **documento.metadados,
+            **(metadados or {}),
+        }
+
+        return self.indexar_texto(
+            texto=documento.texto,
+            documento_id=documento.documento_id,
+            metadados=metadados_indexacao,
             chunker=chunker,
         )
 

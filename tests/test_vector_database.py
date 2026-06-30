@@ -1,5 +1,7 @@
 import importlib.util
+import tempfile
 import unittest
+from pathlib import Path
 
 from Database.structure import DocumentoRAG
 from Database.indexer import DocumentIndexer
@@ -117,6 +119,46 @@ class VectorDatabaseHelperTest(unittest.TestCase):
         self.assertIsInstance(helper.retriever, DocumentRetriever)
         self.assertIs(helper.client, qdrant_client)
         self.assertEqual(helper.collection_name, "documentos_teste")
+
+    def test_indexar_markdown_le_arquivo_e_delega_para_indexar_texto(self):
+        qdrant_client = FakeQdrantClient()
+        helper = VectorDatabaseHelper(
+            collection_name="documentos_teste",
+            embedding_model=FakeEmbeddingModel(),
+            qdrant_client=qdrant_client,
+            vector_size=3,
+        )
+        chamadas = {}
+
+        def fake_indexar_texto(**kwargs):
+            chamadas.update(kwargs)
+            return [
+                DocumentoRAG(
+                    id="wiki-yuv-chunk-1",
+                    text="Conteudo da wiki.",
+                    metadados=kwargs["metadados"],
+                )
+            ]
+
+        helper.indexar_texto = fake_indexar_texto
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            caminho = Path(temp_dir) / "Wiki YUV.md"
+            caminho.write_text("# Wiki YUV\n\nConteudo da wiki.", encoding="utf-8")
+
+            documentos = helper.indexar_markdown(
+                caminho_arquivo=str(caminho),
+                documento_id="wiki-yuv",
+                metadados={"categoria": "suporte"},
+            )
+
+        self.assertEqual(chamadas["texto"], "# Wiki YUV\n\nConteudo da wiki.")
+        self.assertEqual(chamadas["documento_id"], "wiki-yuv")
+        self.assertEqual(chamadas["metadados"]["fonte"], "markdown")
+        self.assertEqual(chamadas["metadados"]["nome_arquivo"], "Wiki YUV.md")
+        self.assertEqual(chamadas["metadados"]["categoria"], "suporte")
+        self.assertIsNone(chamadas["chunker"])
+        self.assertEqual(documentos[0].id, "wiki-yuv-chunk-1")
 
     @unittest.skipUnless(
         importlib.util.find_spec("qdrant_client"),
