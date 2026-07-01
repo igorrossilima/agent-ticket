@@ -29,7 +29,12 @@ class ApiChatTest(unittest.TestCase):
 
         app.dependency_overrides[obter_executor_fluxo] = obter_executor_fake
 
-    def chamar_api(self, method, path, json=None):
+    def auth_headers(self, token="token-usuario-teste"):
+        return {"Authorization": f"Bearer {token}"}
+
+    def chamar_api(self, method, path, json=None, headers=None):
+        headers = self.auth_headers() if headers is None else headers
+
         async def executar():
             transport = httpx.ASGITransport(
                 app=app,
@@ -39,7 +44,7 @@ class ApiChatTest(unittest.TestCase):
                 transport=transport,
                 base_url="http://testserver",
             ) as client:
-                return await client.request(method, path, json=json)
+                return await client.request(method, path, json=json, headers=headers)
 
         return asyncio.run(executar())
 
@@ -68,10 +73,12 @@ class ApiChatTest(unittest.TestCase):
             resposta.json(),
             {
                 "resposta": "Resposta final do agente.",
+                "session_id": resposta.json()["session_id"],
                 "top_k": 4,
                 "provedor_ia": "openai",
             },
         )
+        self.assertTrue(resposta.json()["session_id"])
         self.assertEqual(executor.chamadas[0]["mensagem_usuario"], "Como identifico equipamento offline?")
         self.assertEqual(executor.chamadas[0]["top_k"], 4)
         self.assertEqual(executor.chamadas[0]["provedor_ia"], "openai")
@@ -94,6 +101,47 @@ class ApiChatTest(unittest.TestCase):
 
         self.assertEqual(resposta.status_code, 400)
         self.assertIn("não pode ser vazia", resposta.json()["detail"])
+
+    def test_chat_sem_token_retorna_erro_401(self):
+        resposta = self.chamar_api("POST", "/chat", json={"mensagem": "Oi"}, headers={})
+
+        self.assertEqual(resposta.status_code, 401)
+        self.assertIn("Token de autenticação", resposta.json()["detail"])
+
+    def test_chat_com_token_invalido_retorna_erro_401(self):
+        resposta = self.chamar_api(
+            "POST",
+            "/chat",
+            json={"mensagem": "Oi"},
+            headers={"Authorization": "Token abc"},
+        )
+
+        self.assertEqual(resposta.status_code, 401)
+        self.assertIn("Bearer", resposta.json()["detail"])
+
+    def test_chat_mantem_mesma_sessao_para_mesmo_token(self):
+        executor = FakeFluxoExecutor()
+        self.sobrescrever_executor(executor)
+
+        primeira_resposta = self.chamar_api(
+            "POST",
+            "/chat",
+            json={"mensagem": "Primeira mensagem"},
+            headers=self.auth_headers("token-mesma-sessao"),
+        )
+        segunda_resposta = self.chamar_api(
+            "POST",
+            "/chat",
+            json={"mensagem": "Segunda mensagem"},
+            headers=self.auth_headers("token-mesma-sessao"),
+        )
+
+        self.assertEqual(primeira_resposta.status_code, 200)
+        self.assertEqual(segunda_resposta.status_code, 200)
+        self.assertEqual(
+            primeira_resposta.json()["session_id"],
+            segunda_resposta.json()["session_id"],
+        )
 
     def test_chat_com_top_k_invalido_retorna_erro_de_validacao(self):
         resposta_zero = self.chamar_api("POST", "/chat", json={"mensagem": "Oi", "top_k": 0})
