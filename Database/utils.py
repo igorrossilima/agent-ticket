@@ -88,12 +88,6 @@ class VectorDatabaseHelper:
     def indexar_documentos(self, documentos: Iterable[DocumentoRAG]) -> None:
         self.indexer.indexar_documentos(documentos)
 
-    def buscar_contexto_relevante(self, query_usuario: str, top_k: int = 3) -> List[str]:
-        return self.retriever.buscar_contexto_relevante(
-            query_usuario=query_usuario,
-            top_k=top_k,
-        )
-
     def buscar_documentos_relevantes(
         self,
         query_usuario: str,

@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from Agents.base import Agent
-from Agents.support import SupportAgent, executar_agente_suporte
+from Agents.support import SupportAgent
 
 
 class FakeModel:
@@ -55,18 +55,6 @@ class SupportAgentTest(unittest.TestCase):
         self.assertIn("Como vejo eventos?", modelo.prompt_usuario)
         self.assertIn("Eventos aparecem no relatório.", modelo.prompt_usuario)
         self.assertIn('"categoria": "suporte"', modelo.prompt_usuario)
-
-    def test_helper_executar_agente_suporte(self):
-        with patch("Agents.base.LLMFactory.criar_modelo", return_value=FakeModel()):
-            resposta = executar_agente_suporte(
-                mensagem_usuario="Como vejo eventos?",
-                contexto_wiki="Eventos aparecem no relatório.",
-                classificacao={"categoria": "suporte"},
-                provedor_ia="fake",
-            )
-
-        self.assertIn("Resposta baseada", resposta)
-
 
 if __name__ == "__main__":
     unittest.main()

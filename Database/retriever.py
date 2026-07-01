@@ -14,14 +14,6 @@ class DocumentRetriever:
         self.vector_store = vector_store
         self.embedding_model = embedding_model
 
-    def buscar_contexto_relevante(self, query_usuario: str, top_k: int = 3) -> List[str]:
-        documentos = self.buscar_documentos_relevantes(
-            query_usuario=query_usuario,
-            top_k=top_k,
-        )
-
-        return [documento.text for documento in documentos]
-
     def buscar_documentos_relevantes(
         self,
         query_usuario: str,

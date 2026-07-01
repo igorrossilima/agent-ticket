@@ -38,17 +38,3 @@ class SupportAgent(Agent):
             contexto_wiki=contexto_wiki,
             classificacao=json.dumps(classificacao, ensure_ascii=False),
         )
-
-
-def executar_agente_suporte(
-    mensagem_usuario: str,
-    contexto_wiki: str,
-    classificacao: Dict[str, Any],
-    provedor_ia: str = "openai",
-) -> str:
-    agente = SupportAgent(provedor_ia=provedor_ia)
-    return agente.executar(
-        mensagem_usuario=mensagem_usuario,
-        contexto_wiki=contexto_wiki,
-        classificacao=classificacao,
-    )

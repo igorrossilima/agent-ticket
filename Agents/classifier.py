@@ -32,19 +32,7 @@ class Classifier(Agent):
         return self.extrair_json_resposta(resposta)
 
 
-def executar_classificador_ticket(
-    ticket: str,
-    provedor_ia: str = "openai",
-    retornar_json: bool = True,
-) -> Union[Dict[str, Any], str]:
-    classificador = Classifier(provedor_ia=provedor_ia)
-    return classificador.executar(
-        ticket=ticket,
-        retornar_json=retornar_json,
-    )
-
-
 if __name__ == "__main__":
     ticket_teste = "Quero cancelar minha assinatura porque fui cobrado duas vezes."
-    classificacao = executar_classificador_ticket(ticket_teste, provedor_ia="openai")
+    classificacao = Classifier(provedor_ia="openai").executar(ticket_teste)
     print(classificacao)

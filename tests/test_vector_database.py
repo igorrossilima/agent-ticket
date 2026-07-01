@@ -88,7 +88,7 @@ class VectorDatabaseHelperTest(unittest.TestCase):
         self.assertEqual(documento.embedding, [0.1, 0.2])
         self.assertEqual(documento.score, 0.9)
 
-    def test_busca_contexto_relevante_consulta_qdrant_com_embedding_da_query(self):
+    def test_busca_documentos_relevantes_consulta_qdrant_com_embedding_da_query(self):
         qdrant_client = FakeQdrantClient()
         helper = VectorDatabaseHelper(
             collection_name="documentos_teste",
@@ -97,9 +97,9 @@ class VectorDatabaseHelperTest(unittest.TestCase):
             vector_size=3,
         )
 
-        contexto = helper.buscar_contexto_relevante("Como funciona reembolso?", top_k=1)
+        documentos = helper.buscar_documentos_relevantes("Como funciona reembolso?", top_k=1)
 
-        self.assertEqual(contexto, ["O cliente pode pedir reembolso em ate 7 dias."])
+        self.assertEqual(documentos[0].text, "O cliente pode pedir reembolso em ate 7 dias.")
         self.assertEqual(qdrant_client.query_kwargs["collection_name"], "documentos_teste")
         self.assertEqual(qdrant_client.query_kwargs["query"], [0.1, 0.2, 0.3])
         self.assertEqual(qdrant_client.query_kwargs["limit"], 1)
@@ -282,17 +282,6 @@ class DocumentRetrieverTest(unittest.TestCase):
         self.assertEqual(vector_store.buscar_por_embedding_kwargs["top_k"], 2)
         self.assertEqual(vector_store.buscar_por_embedding_kwargs["filtro"], {"categoria": "financeiro"})
         self.assertEqual(documentos[0].text, "O cliente pode pedir reembolso em ate 7 dias.")
-
-    def test_buscar_contexto_relevante_retorna_apenas_textos(self):
-        retriever = DocumentRetriever(
-            vector_store=FakeVectorStore(),
-            embedding_model=FakeEmbeddingModel(),
-        )
-
-        contexto = retriever.buscar_contexto_relevante("Como funciona reembolso?")
-
-        self.assertEqual(contexto, ["O cliente pode pedir reembolso em ate 7 dias."])
-
 
 if __name__ == "__main__":
     unittest.main()
