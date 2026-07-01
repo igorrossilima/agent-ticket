@@ -8,6 +8,7 @@ class TokenInvalidoError(ValueError):
 
 
 class TokenService:
+    # passo 6
     def identificar_usuario(self, token: str) -> UsuarioAutenticado:
         token_limpo = token.strip() if token else ""
 

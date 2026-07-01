@@ -9,6 +9,7 @@ class SessionService:
     def __init__(self, repository: BaseSessionRepository):
         self.repository = repository
 
+    # passo 9
     def obter_ou_criar_sessao(self, usuario: UsuarioAutenticado) -> SessaoConversa:
         sessao = self.repository.obter_sessao_ativa_por_usuario(usuario.usuario_id)
 

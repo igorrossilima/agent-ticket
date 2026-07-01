@@ -14,13 +14,13 @@ class BaseSessionRepository(ABC):
     def salvar(self, sessao: SessaoConversa) -> SessaoConversa:
         raise NotImplementedError
 
-
 class InMemorySessionRepository(BaseSessionRepository):
     def __init__(self):
         self._sessoes_por_usuario: Dict[str, SessaoConversa] = {}
         self._lock = Lock()
 
-    def obter_sessao_ativa_por_usuario(self, usuario_id: str) -> Optional[SessaoConversa]:
+    # passo 10
+    def obter_sessao_ativa_por_usuario(self, usuario_id: str) -> Optional[SessaoConversa]: # segue regra do passo 11
         with self._lock:
             sessao = self._sessoes_por_usuario.get(usuario_id)
 
@@ -28,7 +28,7 @@ class InMemorySessionRepository(BaseSessionRepository):
                 return sessao
 
         return None
-
+    # passo 12
     def salvar(self, sessao: SessaoConversa) -> SessaoConversa:
         with self._lock:
             self._sessoes_por_usuario[sessao.usuario_id] = sessao
