@@ -1,11 +1,19 @@
 import asyncio
 import unittest
+from uuid import uuid4
 from unittest.mock import patch
 
 import httpx
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import sessionmaker
 
 from Api.main import app
+from Auth.token_service import TokenService
+from Customers.repository import CustomerRepository
 from Database.structure import DocumentoRAG
+from Postgres.config import obter_config_postgres
+from Postgres.session import obter_sessao_db
+from Users.repository import UserRepository
 
 
 class FakeModel:
@@ -60,11 +68,49 @@ class ChatE2ETest(unittest.TestCase):
     def setUp(self):
         app.dependency_overrides = {}
         FakeVectorDatabaseHelper.instances = []
+        self.engine = create_engine(obter_config_postgres().database_url, pool_pre_ping=True)
+        self.connection = self.engine.connect()
+        self.transaction = self.connection.begin()
+        self.SessionLocal = sessionmaker(
+            bind=self.connection,
+            autoflush=False,
+            autocommit=False,
+            expire_on_commit=False,
+        )
+        self.db_session = self.SessionLocal()
+        self.nested = self.connection.begin_nested()
+
+        @event.listens_for(self.db_session, "after_transaction_end")
+        def reiniciar_savepoint(session, transaction):
+            if not self.nested.is_active:
+                self.nested = self.connection.begin_nested()
+
+        def sobrescrever_sessao_db():
+            yield self.db_session
+
+        app.dependency_overrides[obter_sessao_db] = sobrescrever_sessao_db
+        self.auth_user = UserRepository(self.db_session).criar(
+            name="Usuario E2E",
+            email=f"e2e-{uuid4().hex}@example.com",
+            password_hash="hash-teste",
+            role="admin",
+        )
+        self.access_token = TokenService().criar_access_token(self.auth_user)
+        self.customer = CustomerRepository(self.db_session).criar(
+            name="Cliente E2E",
+            email=f"cliente-e2e-{uuid4().hex}@example.com",
+        )
 
     def tearDown(self):
         app.dependency_overrides = {}
+        self.db_session.close()
+        self.transaction.rollback()
+        self.connection.close()
+        self.engine.dispose()
 
-    def chamar_chat(self, token="token-e2e"):
+    def chamar_chat(self, token=None):
+        token = token or self.access_token
+
         async def executar():
             transport = httpx.ASGITransport(
                 app=app,
@@ -79,6 +125,7 @@ class ChatE2ETest(unittest.TestCase):
                     headers={"Authorization": f"Bearer {token}"},
                     json={
                         "mensagem": "Como vejo eventos de velocidade?",
+                        "customer_id": str(self.customer.id),
                         "top_k": 2,
                         "provedor_ia": "openai",
                     },
