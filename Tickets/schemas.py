@@ -98,6 +98,30 @@ class TicketMessageCreate(BaseModel):
         return value
 
 
+class TicketMessageCreateRequest(BaseModel):
+    sender_type: str
+    body: str = Field(min_length=1)
+    sender_user_id: UUID | None = None
+    sender_customer_id: UUID | None = None
+    metadata: dict[str, Any] | None = None
+
+    @field_validator("sender_type")
+    @classmethod
+    def validar_sender_type(cls, value: str) -> str:
+        value = value.strip()
+        if value not in MESSAGE_SENDER_TYPES:
+            raise ValueError(f"Tipo de remetente invalido: {value}.")
+        return value
+
+    @field_validator("body")
+    @classmethod
+    def validar_body(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("A mensagem nao pode ser vazia.")
+        return value
+
+
 class TicketMessageRead(BaseModel):
     id: UUID
     ticket_id: UUID

@@ -9,6 +9,7 @@ from Auth.token_service import TokenInvalidoError, TokenService
 from Sessions.models import SessaoConversa
 from Sessions.repository import InMemorySessionRepository
 from Sessions.service import SessionService
+from Tickets.routes import router as tickets_router
 from Workers.main import executar_fluxo_suporte
 
 
@@ -134,3 +135,9 @@ async def chat(
         top_k=request.top_k,
         provedor_ia=provedor_ia,
     )
+
+
+app.include_router(
+    tickets_router,
+    dependencies=[Depends(obter_usuario_autenticado)],
+)
