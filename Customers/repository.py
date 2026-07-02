@@ -33,9 +33,38 @@ class CustomerRepository:
         return self.session.get(Customer, customer_id)
 
     def obter_por_email(self, email: str) -> Customer | None:
-        statement = select(Customer).where(Customer.email == email)
+        statement = select(Customer).where(Customer.email == email).limit(1)
         return self.session.execute(statement).scalar_one_or_none()
 
     def obter_por_documento(self, document: str) -> Customer | None:
-        statement = select(Customer).where(Customer.document == document)
+        statement = select(Customer).where(Customer.document == document).limit(1)
         return self.session.execute(statement).scalar_one_or_none()
+
+    def listar(self, *, limit: int = 50, offset: int = 0) -> list[Customer]:
+        statement = (
+            select(Customer)
+            .order_by(Customer.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(self.session.execute(statement).scalars().all())
+
+    def atualizar(
+        self,
+        customer: Customer,
+        *,
+        name: str | None = None,
+        email: str | None = None,
+        phone: str | None = None,
+        document: str | None = None,
+    ) -> Customer:
+        if name is not None:
+            customer.name = name
+
+        customer.email = email
+        customer.phone = phone
+        customer.document = document
+
+        self.session.flush()
+        self.session.refresh(customer)
+        return customer

@@ -6,6 +6,7 @@ from starlette.concurrency import run_in_threadpool
 
 from Auth.models import UsuarioAutenticado
 from Auth.token_service import TokenInvalidoError, TokenService
+from Customers.routes import router as customers_router
 from Sessions.models import SessaoConversa
 from Sessions.repository import InMemorySessionRepository
 from Sessions.service import SessionService
@@ -137,6 +138,10 @@ async def chat(
     )
 
 
+app.include_router(
+    customers_router,
+    dependencies=[Depends(obter_usuario_autenticado)],
+)
 app.include_router(
     tickets_router,
     dependencies=[Depends(obter_usuario_autenticado)],
