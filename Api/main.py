@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from Auth.models import UsuarioAutenticado
+from Auth.routes import router as auth_router
 from Auth.token_service import TokenInvalidoError, TokenService
 from Customers.routes import router as customers_router
 from Postgres.session import obter_sessao_db
@@ -69,11 +70,12 @@ async def obter_session_service() -> SessionService:
 async def obter_usuario_autenticado(
     authorization: Optional[str] = Header(default=None),
     token_service: TokenService = Depends(obter_token_service),# chama a função do passo 5
+    db_session: Session = Depends(obter_sessao_db),
 ) -> UsuarioAutenticado:
     token = extrair_token_bearer(authorization) # chama o passo 4
 
     try:
-        return token_service.identificar_usuario(token)
+        return token_service.identificar_usuario(token, db_session)
     except TokenInvalidoError as erro: # se o passo 4 nao retornar um token valido
         raise HTTPException(
             status_code=401,
@@ -241,6 +243,7 @@ def _converter_erro_ticket_chat(erro: TicketServiceError) -> HTTPException:
     return HTTPException(status_code=400, detail=str(erro))
 
 
+app.include_router(auth_router)
 app.include_router(
     customers_router,
     dependencies=[Depends(obter_usuario_autenticado)],

@@ -3,6 +3,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from Customers import models as customer_models  # noqa: F401
+from Tickets import models as ticket_models  # noqa: F401
 from Users.models import User
 
 

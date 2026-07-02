@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from Api.main import app
+from Auth.token_service import TokenService
 from Customers.repository import CustomerRepository
 from Postgres.config import obter_config_postgres
 from Postgres.session import obter_sessao_db
@@ -34,11 +35,14 @@ def db_session():
         yield session
 
     app.dependency_overrides[obter_sessao_db] = sobrescrever_sessao_db
+    app.state.auth_headers = criar_auth_headers(session)
 
     try:
         yield session
     finally:
         app.dependency_overrides = overrides_anteriores
+        if hasattr(app.state, "auth_headers"):
+            delattr(app.state, "auth_headers")
         session.close()
         transaction.rollback()
         connection.close()
@@ -46,7 +50,7 @@ def db_session():
 
 
 def chamar_api(method, path, json=None, headers=None):
-    headers = {"Authorization": "Bearer token-ticket-routes"} if headers is None else headers
+    headers = app.state.auth_headers if headers is None else headers
 
     async def executar():
         transport = httpx.ASGITransport(
@@ -60,6 +64,18 @@ def chamar_api(method, path, json=None, headers=None):
             return await client.request(method, path, json=json, headers=headers)
 
     return asyncio.run(executar())
+
+
+def criar_auth_headers(session):
+    sufixo = uuid4().hex
+    user = UserRepository(session).criar(
+        name="Usuario Auth Tickets",
+        email=f"auth-tickets-{sufixo}@example.com",
+        password_hash="hash-teste",
+        role="admin",
+    )
+    token = TokenService().criar_access_token(user)
+    return {"Authorization": f"Bearer {token}"}
 
 
 def criar_customer_e_user(session):

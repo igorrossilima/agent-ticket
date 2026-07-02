@@ -7,10 +7,12 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from Api.main import app, obter_executor_fluxo
+from Auth.token_service import TokenService
 from Customers.repository import CustomerRepository
 from Postgres.config import obter_config_postgres
 from Postgres.session import obter_sessao_db
 from Tickets.repository import TicketMessageRepository, TicketRepository
+from Users.repository import UserRepository
 
 
 class FakeFluxoExecutor:
@@ -47,6 +49,13 @@ class ApiChatTest(unittest.TestCase):
             yield self.db_session
 
         app.dependency_overrides[obter_sessao_db] = sobrescrever_sessao_db
+        self.auth_user = UserRepository(self.db_session).criar(
+            name="Usuario Auth Chat",
+            email=f"auth-chat-{uuid4().hex}@example.com",
+            password_hash="hash-teste",
+            role="admin",
+        )
+        self.access_token = TokenService().criar_access_token(self.auth_user)
 
     def tearDown(self):
         app.dependency_overrides = {}
@@ -61,7 +70,8 @@ class ApiChatTest(unittest.TestCase):
 
         app.dependency_overrides[obter_executor_fluxo] = obter_executor_fake
 
-    def auth_headers(self, token="token-usuario-teste"):
+    def auth_headers(self, token=None):
+        token = token or self.access_token
         return {"Authorization": f"Bearer {token}"}
 
     def criar_customer(self):
@@ -209,7 +219,7 @@ class ApiChatTest(unittest.TestCase):
                 "mensagem": "Primeira mensagem",
                 "customer_id": str(customer.id),
             },
-            headers=self.auth_headers("token-mesma-sessao"),
+            headers=self.auth_headers(),
         )
         ticket_id = primeira_resposta.json()["ticket_id"]
         segunda_resposta = self.chamar_api(
@@ -220,7 +230,7 @@ class ApiChatTest(unittest.TestCase):
                 "customer_id": str(customer.id),
                 "ticket_id": ticket_id,
             },
-            headers=self.auth_headers("token-mesma-sessao"),
+            headers=self.auth_headers(),
         )
 
         self.assertEqual(primeira_resposta.status_code, 200)
