@@ -6,6 +6,10 @@ from sqlalchemy import engine_from_config, pool
 from Postgres.base import Base
 from Postgres.config import obter_config_postgres
 
+from Customers import models as customer_models  # noqa: F401
+from Tickets import models as ticket_models  # noqa: F401
+from Users import models as user_models  # noqa: F401
+
 config = context.config
 
 if config.config_file_name is not None:
