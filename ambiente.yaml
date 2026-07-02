@@ -1,24 +1,27 @@
-version: '3.8'
-
 services:
-  ambiente:
-    image: python:3.9-slim
-    container_name: ambiente
+  api:
+    build:
+      context: .
+    container_name: agent_ticket_api
     working_dir: /app
-    command: tail -f /dev/null
+    command: uvicorn Api.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      PYTHONPATH: /app
     volumes:
       - .:/app
-#    ports:
-#      - <HOST>:<CONTAINER>
-#      - 3000:3000
+    ports:
+      - "${API_PORT:-8000}:8000"
 
 
 
-# Iniciar ambiente: 
-# docker compose -f ambiente.yaml up
+# Iniciar API:
+# docker compose -f ambiente.yaml up --build
+#
+# Se a porta 8000 estiver ocupada:
+# API_PORT=8001 docker compose -f ambiente.yaml up --build
 
-# Conectar ambiente: 
-# docker exec -it ambiente bash
+# Conectar no container:
+# docker exec -it agent_ticket_api bash
 
 # Desligar ambiente:
 # docker compose -f ambiente.yaml down
@@ -47,4 +50,3 @@ services:
 # passar arquivo yaml para dentro da pasta do projeto para criar um ambiente Docker
 # executa Docker composse up -f ambiente.yaml
 # executa ./comando_conectar_ambiente.sh ( que executa o arquivo que tem dentro da pasta que conecta ao ambiente )
-

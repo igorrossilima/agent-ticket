@@ -2,6 +2,7 @@ from typing import Callable, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from Auth.models import UsuarioAutenticado
 from Auth.token_service import TokenInvalidoError, TokenService
@@ -113,7 +114,8 @@ async def chat(
     provedor_ia = provedor_ia or "openai"
 
     try: # aqui é pausado o fluxo da API e iniciado o fluxo do Worker
-        resposta = executor_fluxo(
+        resposta = await run_in_threadpool(
+            executor_fluxo,
             mensagem_usuario=mensagem,
             provedor_ia=provedor_ia,
             top_k=request.top_k,
