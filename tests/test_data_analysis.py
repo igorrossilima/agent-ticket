@@ -15,7 +15,7 @@ class FakeModel:
 class DataAnalysisTest(unittest.TestCase):
     def test_carrega_prompt_do_agente_de_analise(self):
         prompt = Agent.carregar_prompt(
-            "Schemas/prompt_agente.yaml",
+            "Agents/prompts/prompt_agente.yaml",
             "agente_analise_dados",
         )
 

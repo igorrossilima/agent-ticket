@@ -13,7 +13,7 @@ class Agent:
     def __init__(self, nome_agente: str, provedor_ia: str = "openai"):
         self.nome_agente = nome_agente
         self.provedor_ia = provedor_ia
-        self.caminho_prompt = Path(__file__).resolve().parent.parent / "Schemas" / "prompt_agente.yaml"
+        self.caminho_prompt = Path(__file__).resolve().parent / "prompts" / "prompt_agente.yaml"
         self.prompt = self.carregar_prompt(self.caminho_prompt, self.nome_agente)
         self.modelo_ia = LLMFactory.criar_modelo(self.provedor_ia)
 

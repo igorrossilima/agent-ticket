@@ -20,7 +20,7 @@ class FakeModel:
 class ClassifierTest(unittest.TestCase):
     def test_carrega_prompt_do_classificador(self):
         prompt = Agent.carregar_prompt(
-            "Schemas/prompt_agente.yaml",
+            "Agents/prompts/prompt_agente.yaml",
             "agente_classificador",
         )
 

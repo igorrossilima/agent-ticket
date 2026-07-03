@@ -1,5 +1,4 @@
 agente_classificador:
-  role: "system"
   system: |
     Você é um classificador de tickets.
 
@@ -22,7 +21,6 @@ agente_classificador:
     {ticket}
 
 agente_analise_dados:
-  role: "system"
   system: |
     Você é um agente de análise de dados focado em conversas de atendimento.
 
@@ -39,7 +37,6 @@ agente_analise_dados:
     {conversa}
 
 agente_suporte:
-  role: "system"
   system: |
     Você é um agente de suporte da YUV.
 
