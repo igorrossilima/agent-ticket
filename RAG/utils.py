@@ -1,11 +1,11 @@
 from typing import Any, Dict, Iterable, List, Optional
 
-from Database.chunkers import BaseChunker
-from Database.ingestion import MarkdownDocumentReader
-from Database.indexer import DocumentIndexer
-from Database.retriever import DocumentRetriever
-from Database.structure import DocumentoRAG
-from Database.vector_store import QdrantVectorStore
+from RAG.chunkers import BaseChunker
+from RAG.ingestion import MarkdownDocumentReader
+from RAG.indexer import DocumentIndexer
+from RAG.retriever import DocumentRetriever
+from RAG.structure import DocumentoRAG
+from RAG.vector_store import QdrantVectorStore
 from models import BaseEmbeddingModel, EmbeddingFactory
 
 

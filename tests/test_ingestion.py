@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from Database.chunkers import RecursiveChunker
-from Database.ingestion import (
+from RAG.chunkers import RecursiveChunker
+from RAG.ingestion import (
     JsonlChunkWriter,
     MarkdownDocumentReader,
     MarkdownIngestionService,

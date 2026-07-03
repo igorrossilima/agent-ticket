@@ -3,11 +3,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from Database.structure import DocumentoRAG
-from Database.indexer import DocumentIndexer
-from Database.retriever import DocumentRetriever
-from Database.utils import VectorDatabaseHelper
-from Database.vector_store import QdrantVectorStore
+from RAG.structure import DocumentoRAG
+from RAG.indexer import DocumentIndexer
+from RAG.retriever import DocumentRetriever
+from RAG.utils import VectorDatabaseHelper
+from RAG.vector_store import QdrantVectorStore
 from models import BaseEmbeddingModel
 
 

@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 
 sys.path.append(str(Path(__file__).resolve().parent.parent)) # volta uma pagina para importar alguma coisa dentro de outro arquivo
 
-from Database.utils import VectorDatabaseHelper
-from Database.structure import DocumentoRAG
+from RAG.utils import VectorDatabaseHelper
+from RAG.structure import DocumentoRAG
 from Agents.classifier import Classifier
 from Agents.support import SupportAgent
 

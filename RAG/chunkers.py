@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from Database.structure import DocumentoRAG
+from RAG.structure import DocumentoRAG
 from models import BaseEmbeddingModel
 
 

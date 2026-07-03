@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from Api.main import app
 from Auth.token_service import TokenService
 from Customers.repository import CustomerRepository
-from Database.structure import DocumentoRAG
+from RAG.structure import DocumentoRAG
 from Postgres.config import obter_config_postgres
 from Postgres.session import obter_sessao_db
 from Users.repository import UserRepository

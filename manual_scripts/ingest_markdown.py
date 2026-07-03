@@ -4,8 +4,8 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from Database.chunkers import RecursiveChunker
-from Database.ingestion import JsonlChunkWriter, MarkdownIngestionService
+from RAG.chunkers import RecursiveChunker
+from RAG.ingestion import JsonlChunkWriter, MarkdownIngestionService
 
 
 def criar_parser() -> argparse.ArgumentParser:

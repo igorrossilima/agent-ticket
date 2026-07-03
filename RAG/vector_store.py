@@ -2,7 +2,7 @@ import os
 import uuid
 from typing import Any, Dict, Iterable, List, Optional
 
-from Database.structure import DocumentoRAG
+from RAG.structure import DocumentoRAG
 
 
 class QdrantVectorStore:

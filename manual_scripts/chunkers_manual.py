@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from Database.chunkers import Chunking, RecursiveChunker
+from RAG.chunkers import Chunking, RecursiveChunker
 
 
 def main():

@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Union
 
-from Database.chunkers import BaseChunker, Chunking, RecursiveChunker
-from Database.structure import DocumentoRAG
+from RAG.chunkers import BaseChunker, Chunking, RecursiveChunker
+from RAG.structure import DocumentoRAG
 
 
 @dataclass

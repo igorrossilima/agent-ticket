@@ -63,7 +63,7 @@ volumes:
 #├── requirements.txt
 #├── Schemas/
 #│   └── prompt_agente.yaml
-#├── Database/
+#├── RAG/
 #│   ├── structure.py
 #│   └── utils.py
 #└── Workers/

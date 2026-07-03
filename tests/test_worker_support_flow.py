@@ -1,6 +1,6 @@
 import unittest
 
-from Database.structure import DocumentoRAG
+from RAG.structure import DocumentoRAG
 from Workers.main import (
     executar_fluxo_suporte,
     formatar_contexto_documentos,

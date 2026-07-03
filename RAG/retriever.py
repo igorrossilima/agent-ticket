@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
-from Database.structure import DocumentoRAG
-from Database.vector_store import QdrantVectorStore
+from RAG.structure import DocumentoRAG
+from RAG.vector_store import QdrantVectorStore
 from models import BaseEmbeddingModel
 
 

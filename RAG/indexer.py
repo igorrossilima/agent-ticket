@@ -1,8 +1,8 @@
 from typing import Any, Dict, Iterable, List, Optional
 
-from Database.chunkers import BaseChunker, Chunking
-from Database.structure import DocumentoRAG
-from Database.vector_store import QdrantVectorStore
+from RAG.chunkers import BaseChunker, Chunking
+from RAG.structure import DocumentoRAG
+from RAG.vector_store import QdrantVectorStore
 from models import BaseEmbeddingModel
 
 

@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from Database.utils import VectorDatabaseHelper
+from RAG.utils import VectorDatabaseHelper
 
 
 def criar_parser() -> argparse.ArgumentParser:

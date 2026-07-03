@@ -1,6 +1,6 @@
 import unittest
 
-from Database.chunkers import Chunking, RecursiveChunker, SemanticChunker
+from RAG.chunkers import Chunking, RecursiveChunker, SemanticChunker
 from models import BaseEmbeddingModel
 
 
