@@ -125,13 +125,11 @@ class ApiChatTest(unittest.TestCase):
             resposta.json(),
             {
                 "resposta": "Resposta final do agente.",
-                "session_id": resposta.json()["session_id"],
                 "ticket_id": resposta.json()["ticket_id"],
                 "top_k": 4,
                 "provedor_ia": "openai",
             },
         )
-        self.assertTrue(resposta.json()["session_id"])
         self.assertEqual(executor.chamadas[0]["mensagem_usuario"], "Como identifico equipamento offline?")
         self.assertEqual(executor.chamadas[0]["top_k"], 4)
         self.assertEqual(executor.chamadas[0]["provedor_ia"], "openai")
@@ -207,7 +205,7 @@ class ApiChatTest(unittest.TestCase):
         self.assertEqual(resposta.status_code, 401)
         self.assertIn("Bearer", resposta.json()["detail"])
 
-    def test_chat_mantem_mesma_sessao_para_mesmo_token(self):
+    def test_chat_mantem_mesmo_ticket_quando_ticket_id_informado(self):
         executor = FakeFluxoExecutor()
         self.sobrescrever_executor(executor)
         customer = self.criar_customer()
@@ -235,10 +233,6 @@ class ApiChatTest(unittest.TestCase):
 
         self.assertEqual(primeira_resposta.status_code, 200)
         self.assertEqual(segunda_resposta.status_code, 200)
-        self.assertEqual(
-            primeira_resposta.json()["session_id"],
-            segunda_resposta.json()["session_id"],
-        )
         self.assertEqual(primeira_resposta.json()["ticket_id"], segunda_resposta.json()["ticket_id"])
         mensagens = TicketMessageRepository(self.db_session).listar_por_ticket(UUID(ticket_id))
         self.assertEqual(len(mensagens), 4)

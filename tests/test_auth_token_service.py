@@ -6,12 +6,10 @@ from sqlalchemy.orm import sessionmaker
 
 from Auth.token_service import TokenInvalidoError, TokenService
 from Postgres.config import obter_config_postgres
-from Sessions.repository import InMemorySessionRepository
-from Sessions.service import SessionService
 from Users.repository import UserRepository
 
 
-class AuthSessionTest(unittest.TestCase):
+class AuthTokenServiceTest(unittest.TestCase):
     def setUp(self):
         self.engine = create_engine(obter_config_postgres().database_url, pool_pre_ping=True)
         self.connection = self.engine.connect()
@@ -56,20 +54,6 @@ class AuthSessionTest(unittest.TestCase):
 
         with self.assertRaises(TokenInvalidoError):
             service.identificar_usuario("   ", self.db_session)
-
-    def test_session_service_obtem_ou_cria_sessao_ativa_por_usuario(self):
-        token_service = TokenService()
-        session_service = SessionService(repository=InMemorySessionRepository())
-        user = self.criar_user()
-        token = token_service.criar_access_token(user)
-        usuario = token_service.identificar_usuario(token, self.db_session)
-
-        primeira_sessao = session_service.obter_ou_criar_sessao(usuario)
-        segunda_sessao = session_service.obter_ou_criar_sessao(usuario)
-
-        self.assertEqual(primeira_sessao.session_id, segunda_sessao.session_id)
-        self.assertEqual(primeira_sessao.usuario_id, usuario.usuario_id)
-        self.assertTrue(primeira_sessao.ativa)
 
 
 if __name__ == "__main__":

@@ -11,9 +11,6 @@ from Auth.routes import router as auth_router
 from Auth.token_service import TokenInvalidoError, TokenService
 from Customers.routes import router as customers_router
 from Postgres.session import obter_sessao_db
-from Sessions.models import SessaoConversa
-from Sessions.repository import InMemorySessionRepository
-from Sessions.service import SessionService
 from Tickets.routes import router as tickets_router
 from Tickets.schemas import TicketCreate, TicketMessageCreate
 from Tickets.service import (
@@ -29,8 +26,6 @@ from Workers.main import executar_fluxo_suporte
 
 FluxoSuporteExecutor = Callable[..., str]
 _token_service = TokenService()
-_session_repository = InMemorySessionRepository() # busca na memoria o repositorio com o passo 10
-_session_service = SessionService(repository=_session_repository) # pega a o usuario 9 com a sessao do reposito
 
 app = FastAPI(
     title="API Agente de Suporte YUV",
@@ -49,7 +44,6 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     resposta: str
-    session_id: str
     ticket_id: UUID
     top_k: int
     provedor_ia: str
@@ -61,10 +55,6 @@ async def obter_executor_fluxo() -> FluxoSuporteExecutor:
 # passo 5
 async def obter_token_service() -> TokenService:
     return _token_service # retorna um token que foi buscado ou criado no passo 6
-
-# passo 8
-async def obter_session_service() -> SessionService:
-    return _session_service # busca sessao do servico na variavel fora das funções
 
 # passo 3
 async def obter_usuario_autenticado(
@@ -82,13 +72,6 @@ async def obter_usuario_autenticado(
             detail=str(erro),
             headers={"WWW-Authenticate": "Bearer"},
         ) from erro
-
-# passo 2
-async def obter_sessao_conversa(
-    usuario: UsuarioAutenticado = Depends(obter_usuario_autenticado), # chama o passo 3
-    session_service: SessionService = Depends(obter_session_service), # chama o passo 8
-) -> SessaoConversa:
-    return session_service.obter_ou_criar_sessao(usuario) # retorna a sessao ou cria com base no usuario
 
 # passo 4
 def extrair_token_bearer(authorization: Optional[str]) -> str:
@@ -119,7 +102,7 @@ async def health() -> dict[str, str]:
 @app.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
-    sessao: SessaoConversa = Depends(obter_sessao_conversa), # aqui retorna todo o processo do passo 12
+    _usuario: UsuarioAutenticado = Depends(obter_usuario_autenticado),
     executor_fluxo: FluxoSuporteExecutor = Depends(obter_executor_fluxo), # aqui amarra o fluxo do Workers para ser chamado depois
     db_session: Session = Depends(obter_sessao_db),
 ) -> ChatResponse:
@@ -190,7 +173,6 @@ async def chat(
 
     return ChatResponse(
         resposta=resposta,
-        session_id=sessao.session_id,
         ticket_id=ticket.id,
         top_k=request.top_k,
         provedor_ia=provedor_ia,

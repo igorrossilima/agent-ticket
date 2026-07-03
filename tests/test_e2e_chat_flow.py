@@ -133,7 +133,7 @@ class ChatE2ETest(unittest.TestCase):
 
         return asyncio.run(executar())
 
-    def test_chat_executa_fluxo_completo_com_sessao_worker_agents_e_retriever(self):
+    def test_chat_executa_fluxo_completo_com_ticket_worker_agents_e_retriever(self):
         modelo = FakeModel()
 
         with patch("Agents.base.LLMFactory.criar_modelo", return_value=modelo), patch(
@@ -149,7 +149,7 @@ class ChatE2ETest(unittest.TestCase):
             corpo["resposta"],
             "O sistema permite consultar eventos usando os filtros da tela de eventos.",
         )
-        self.assertTrue(corpo["session_id"])
+        self.assertTrue(corpo["ticket_id"])
         self.assertEqual(corpo["top_k"], 2)
         self.assertEqual(corpo["provedor_ia"], "openai")
 
