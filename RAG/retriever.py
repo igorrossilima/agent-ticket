@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 
 from RAG.structure import DocumentoRAG
 from RAG.vector_store import QdrantVectorStore
-from models import BaseEmbeddingModel
+from AI.embeddings import BaseEmbeddingModel
 
 
 class DocumentRetriever:

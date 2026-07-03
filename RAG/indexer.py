@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from RAG.chunkers import BaseChunker, Chunking
 from RAG.structure import DocumentoRAG
 from RAG.vector_store import QdrantVectorStore
-from models import BaseEmbeddingModel
+from AI.embeddings import BaseEmbeddingModel
 
 
 class DocumentIndexer:

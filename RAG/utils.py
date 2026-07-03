@@ -6,7 +6,7 @@ from RAG.indexer import DocumentIndexer
 from RAG.retriever import DocumentRetriever
 from RAG.structure import DocumentoRAG
 from RAG.vector_store import QdrantVectorStore
-from models import BaseEmbeddingModel, EmbeddingFactory
+from AI.embeddings import BaseEmbeddingModel, EmbeddingFactory
 
 
 class VectorDatabaseHelper:

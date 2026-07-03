@@ -8,7 +8,7 @@ from RAG.indexer import DocumentIndexer
 from RAG.retriever import DocumentRetriever
 from RAG.utils import VectorDatabaseHelper
 from RAG.vector_store import QdrantVectorStore
-from models import BaseEmbeddingModel
+from AI.embeddings import BaseEmbeddingModel
 
 
 class FakeEmbeddingModel(BaseEmbeddingModel):

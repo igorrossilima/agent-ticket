@@ -1,7 +1,7 @@
 import unittest
 
 from RAG.chunkers import Chunking, RecursiveChunker, SemanticChunker
-from models import BaseEmbeddingModel
+from AI.embeddings import BaseEmbeddingModel
 
 
 class FakeEmbeddingModel(BaseEmbeddingModel):

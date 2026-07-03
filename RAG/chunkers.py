@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from RAG.structure import DocumentoRAG
-from models import BaseEmbeddingModel
+from AI.embeddings import BaseEmbeddingModel
 
 
 class BaseChunker(ABC):

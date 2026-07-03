@@ -7,7 +7,7 @@ import yaml
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from models import LLMFactory
+from AI.llm import LLMFactory
 
 class Agent:
     def __init__(self, nome_agente: str, provedor_ia: str = "openai"):
