@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+compose_args=("up" "-d")
+
+if [ "${1:-}" = "--build" ]; then
+  compose_args+=("--build")
+  shift
+fi
+
+docker compose -f ambiente.yaml "${compose_args[@]}" "$@"
+docker compose -f ambiente.yaml ps

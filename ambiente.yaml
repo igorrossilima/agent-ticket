@@ -54,19 +54,22 @@ volumes:
   qdrant_data:
 
 # Iniciar API:
-# docker compose -f ambiente.yaml up --build
+# ./scripts/iniciar
+#
+# Iniciar API recriando a imagem:
+# ./scripts/iniciar --build
 #
 # Se a porta 8000 estiver ocupada:
-# API_PORT=8001 docker compose -f ambiente.yaml up --build
+# API_PORT=8001 ./scripts/iniciar --build
 #
 # Se a porta 5432 do Postgres estiver ocupada:
-# POSTGRES_PORT=5433 docker compose -f ambiente.yaml up --build
+# POSTGRES_PORT=5433 ./scripts/iniciar --build
 #
 # Qdrant fica acessivel pela maquina em http://localhost:6333
 # e pela API dentro do Docker em http://qdrant:6333
 #
 # Se as duas portas estiverem ocupadas:
-# API_PORT=8001 POSTGRES_PORT=5433 docker compose -f ambiente.yaml up --build
+# API_PORT=8001 POSTGRES_PORT=5433 ./scripts/iniciar --build
 
 # Conectar no container:
 # docker exec -it agent_ticket_api bash
@@ -74,8 +77,11 @@ volumes:
 # Conectar no Postgres:
 # docker exec -it agent_ticket_postgres psql -U postgres -d agent_ticket
 
+# Indexar a wiki no Qdrant:
+# ./scripts/indexar-wiki
+
 # Desligar ambiente:
-# docker compose -f ambiente.yaml down
+# ./scripts/desligar
 
 # Dados brutos usados pelo RAG:
 # RAG/data/
