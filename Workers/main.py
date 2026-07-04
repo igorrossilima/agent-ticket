@@ -10,6 +10,7 @@ from RAG.structure import DocumentoRAG
 from Agents.classifier import Classifier
 from Agents.support import SupportAgent
 
+
 # junta uma query de busca a partir da mensagem do usuário e da classificação
 def montar_query_busca(mensagem_usuario: str, classificacao: Optional[Dict[str, Any]]) -> str:
     if not mensagem_usuario or not mensagem_usuario.strip():
@@ -17,15 +18,15 @@ def montar_query_busca(mensagem_usuario: str, classificacao: Optional[Dict[str, 
 
     partes = [mensagem_usuario.strip()]
     classificacao = classificacao or {}
-    
+
     for campo in ("categoria", "intencao", "justificativa"):
         valor = classificacao.get(campo)
-        
+
         if valor:
             partes.append(str(valor).strip())
-    
+
     termos_busca = classificacao.get("termos_busca")
-    
+
     if isinstance(termos_busca, str):
         partes.append(termos_busca.strip())
     elif isinstance(termos_busca, Iterable):
