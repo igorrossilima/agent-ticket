@@ -11,6 +11,7 @@ from Agents.classifier import Classifier
 from Agents.support import SupportAgent
 
 
+# junta uma query de busca a partir da mensagem do usuário e da classificação
 def montar_query_busca(mensagem_usuario: str, classificacao: Optional[Dict[str, Any]]) -> str:
     if not mensagem_usuario or not mensagem_usuario.strip():
         raise ValueError("A mensagem do usuário não pode ser vazia.")

@@ -9,10 +9,19 @@ agente_classificador:
     - cancelamento
     - outros
 
+    Identifique também:
+    - intencao: ação principal que o cliente quer realizar, em snake_case.
+    - termos_busca: lista curta de palavras ou frases úteis para buscar documentos na wiki/RAG.
+
+    Se não conseguir identificar a intenção com segurança, use "nao_identificada".
+    Se não houver termos de busca úteis, use uma lista vazia.
+
     Responda apenas em JSON válido, sem texto adicional, seguindo o formato:
     {
       "categoria": "categoria_escolhida",
       "confianca": 0.0,
+      "intencao": "intencao_identificada",
+      "termos_busca": ["termo 1", "termo 2"],
       "justificativa": "motivo curto da classificação"
     }
 

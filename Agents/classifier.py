@@ -16,6 +16,21 @@ class Classifier(Agent):
             provedor_ia=provedor_ia,
         )
 
+    @staticmethod
+    def normalizar_classificacao(classificacao: Dict[str, Any]) -> Dict[str, Any]:
+        classificacao["categoria"] = classificacao.get("categoria") or "outros"
+        classificacao["confianca"] = classificacao.get("confianca", 0.0)
+        classificacao["intencao"] = (
+            classificacao.get("intencao") or "nao_identificada"
+        )
+        classificacao["termos_busca"] = classificacao.get("termos_busca") or []
+        classificacao["justificativa"] = (
+            classificacao.get("justificativa")
+            or "Classificação sem justificativa."
+        )
+
+        return classificacao
+
     def executar(
         self,
         ticket: str,
@@ -29,7 +44,9 @@ class Classifier(Agent):
         if not retornar_json:
             return resposta
 
-        return self.extrair_json_resposta(resposta)
+        classificacao = self.extrair_json_resposta(resposta)
+
+        return self.normalizar_classificacao(classificacao)
 
 
 if __name__ == "__main__":

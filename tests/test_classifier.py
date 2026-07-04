@@ -25,6 +25,8 @@ class ClassifierTest(unittest.TestCase):
         )
 
         self.assertIn("Classifique o ticket", prompt["system"])
+        self.assertIn('"intencao"', prompt["system"])
+        self.assertIn('"termos_busca"', prompt["system"])
         self.assertIn("{ticket}", prompt["user"])
 
     def test_rejeita_ticket_vazio(self):
@@ -44,6 +46,8 @@ class ClassifierTest(unittest.TestCase):
 
         self.assertEqual(resultado["categoria"], "financeiro")
         self.assertEqual(resultado["confianca"], 0.95)
+        self.assertEqual(resultado["intencao"], "nao_identificada")
+        self.assertEqual(resultado["termos_busca"], [])
         self.assertIn("cobrança duplicada", resultado["justificativa"])
 
 

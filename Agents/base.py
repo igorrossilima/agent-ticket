@@ -54,6 +54,8 @@ class Agent:
             return {
                 "categoria": "outros",
                 "confianca": 0.0,
+                "intencao": "nao_identificada",
+                "termos_busca": [],
                 "justificativa": "A resposta da IA não veio em JSON válido.",
                 "resposta_original": resposta,
             }
@@ -66,6 +68,8 @@ class Agent:
             return {
                 "categoria": "outros",
                 "confianca": 0.0,
+                "intencao": "nao_identificada",
+                "termos_busca": [],
                 "justificativa": "Não foi possível interpretar o JSON retornado pela IA.",
                 "resposta_original": resposta,
             }
