@@ -8,6 +8,7 @@ from Customers.repository import CustomerRepository
 from Postgres.config import obter_config_postgres
 from Tickets.schemas import (
     TicketAssignmentUpdate,
+    TicketClassificationUpdate,
     TicketCreate,
     TicketMessageCreate,
     TicketMessageRead,
@@ -74,6 +75,8 @@ def test_ticket_service_cria_ticket_e_aplica_status_por_mensagem():
         assert ticket.title == "Falha no login"
         assert ticket.description == "Cliente nao consegue entrar."
         assert ticket.status == "open"
+        assert ticket.category == "outros"
+        assert ticket.requires_human is False
 
         mensagem_cliente = service.adicionar_mensagem(
             TicketMessageCreate(
@@ -105,6 +108,40 @@ def test_ticket_service_cria_ticket_e_aplica_status_por_mensagem():
         assert mensagem_ia.metadata_["confidence"] == 0.91
         assert ticket_response.status == "pending"
         assert mensagem_response.metadata["rag_sources"] == ["faq-login"]
+    finally:
+        next(session_generator, None)
+
+
+def test_ticket_service_atualiza_classificacao():
+    session_generator = criar_sessao_teste()
+    session = next(session_generator)
+
+    try:
+        _, customer = criar_dados_base(session)
+        service = TicketService(session)
+        ticket = service.criar_ticket(
+            TicketCreate(
+                customer_id=customer.id,
+                title="Como vejo eventos?",
+            )
+        )
+
+        ticket_classificado = service.atualizar_classificacao(
+            ticket.id,
+            TicketClassificationUpdate(
+                category="eventos",
+                intent="consultar_eventos",
+                classification_confidence=0.87,
+                classification_reason="Cliente quer consultar eventos.",
+                requires_human=True,
+            ),
+        )
+
+        assert ticket_classificado.category == "eventos"
+        assert ticket_classificado.intent == "consultar_eventos"
+        assert ticket_classificado.classification_confidence == 0.87
+        assert ticket_classificado.classification_reason == "Cliente quer consultar eventos."
+        assert ticket_classificado.requires_human is True
     finally:
         next(session_generator, None)
 

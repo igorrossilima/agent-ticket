@@ -113,6 +113,8 @@ def test_ticket_routes_criam_listam_e_detalham_ticket(db_session):
     assert ticket["description"] == "Cliente nao consegue acessar."
     assert ticket["status"] == "open"
     assert ticket["priority"] == "medium"
+    assert ticket["category"] == "outros"
+    assert ticket["requires_human"] is False
 
     resposta_listagem = chamar_api("GET", "/tickets?status=open")
     resposta_detalhe = chamar_api("GET", f"/tickets/{ticket['id']}")

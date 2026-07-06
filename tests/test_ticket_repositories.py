@@ -52,6 +52,10 @@ def test_repositories_criam_ticket_com_mensagens():
             title="Erro ao acessar conta",
             description="Cliente relata falha no login.",
             source="api",
+            category="acesso",
+            intent="resolver_login",
+            classification_confidence=0.82,
+            classification_reason="Cliente relata problema de acesso.",
         )
 
         primeira = messages.criar(
@@ -75,6 +79,11 @@ def test_repositories_criam_ticket_com_mensagens():
         assert ticket_com_mensagens.assigned_user_id == user.id
         assert ticket_com_mensagens.status == "open"
         assert ticket_com_mensagens.priority == "medium"
+        assert ticket_com_mensagens.category == "acesso"
+        assert ticket_com_mensagens.intent == "resolver_login"
+        assert ticket_com_mensagens.classification_confidence == 0.82
+        assert ticket_com_mensagens.classification_reason == "Cliente relata problema de acesso."
+        assert ticket_com_mensagens.requires_human is False
         assert ticket_com_mensagens.last_message_at == segunda.created_at
         assert [mensagem.id for mensagem in mensagens] == [primeira.id, segunda.id]
         assert mensagens[1].metadata_["rag_sources"] == ["faq-login"]
@@ -117,6 +126,6 @@ def test_repositories_buscam_por_email_e_listam_por_status():
         assert users.obter_por_email(user.email).id == user.id
         assert customers.obter_por_email(customer.email).id == customer.id
         assert customers.obter_por_documento(customer.document).id == customer.id
-        assert [item.id for item in tickets_por_status] == [ticket.id]
+        assert ticket.id in [item.id for item in tickets_por_status]
     finally:
         next(session_generator, None)

@@ -31,7 +31,7 @@ class FakeModel:
         if "classificador de tickets" in prompt_sistema:
             return """
             {
-                "categoria": "suporte",
+                "categoria": "eventos",
                 "confianca": 0.92,
                 "justificativa": "Cliente quer consultar eventos.",
                 "intencao": "consultar_eventos",
@@ -157,11 +157,12 @@ class ChatE2ETest(unittest.TestCase):
         self.assertIn("Ticket:", modelo.chamadas[0]["prompt_usuario"])
         self.assertIn("Contexto da wiki:", modelo.chamadas[1]["prompt_usuario"])
         self.assertIn("Eventos de velocidade", modelo.chamadas[1]["prompt_usuario"])
+        self.assertIn('"categoria": "eventos"', modelo.chamadas[1]["prompt_usuario"])
 
         db = FakeVectorDatabaseHelper.instances[0]
         self.assertEqual(db.top_k, 2)
         self.assertIn("Como vejo eventos de velocidade?", db.query_usuario)
-        self.assertIn("suporte", db.query_usuario)
+        self.assertIn("eventos", db.query_usuario)
         self.assertIn("velocidade", db.query_usuario)
 
 

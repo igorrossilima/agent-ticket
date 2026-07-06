@@ -5,9 +5,11 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from Shared.constants import (
+    DEFAULT_TICKET_CATEGORY,
     DEFAULT_TICKET_PRIORITY,
     DEFAULT_TICKET_SOURCE,
     MESSAGE_SENDER_TYPES,
+    TICKET_CATEGORIES,
     TICKET_PRIORITIES,
     TICKET_SOURCES,
     TICKET_STATUSES,
@@ -21,6 +23,11 @@ class TicketCreate(BaseModel):
     assigned_user_id: UUID | None = None
     priority: str = DEFAULT_TICKET_PRIORITY
     source: str = DEFAULT_TICKET_SOURCE
+    category: str = DEFAULT_TICKET_CATEGORY
+    intent: str | None = None
+    classification_confidence: float | None = Field(default=None, ge=0, le=1)
+    classification_reason: str | None = None
+    requires_human: bool = False
     ai_summary: str | None = None
 
     @field_validator("title")
@@ -31,7 +38,7 @@ class TicketCreate(BaseModel):
             raise ValueError("O titulo do ticket nao pode ser vazio.")
         return value
 
-    @field_validator("description", "ai_summary")
+    @field_validator("description", "intent", "classification_reason", "ai_summary")
     @classmethod
     def limpar_texto_opcional(cls, value: str | None) -> str | None:
         if value is None:
@@ -55,6 +62,39 @@ class TicketCreate(BaseModel):
         if value not in TICKET_SOURCES:
             raise ValueError(f"Origem invalida: {value}.")
         return value
+
+    @field_validator("category")
+    @classmethod
+    def validar_category(cls, value: str) -> str:
+        value = value.strip()
+        if value not in TICKET_CATEGORIES:
+            raise ValueError(f"Categoria invalida: {value}.")
+        return value
+
+
+class TicketClassificationUpdate(BaseModel):
+    category: str = DEFAULT_TICKET_CATEGORY
+    intent: str | None = None
+    classification_confidence: float | None = Field(default=None, ge=0, le=1)
+    classification_reason: str | None = None
+    requires_human: bool = False
+
+    @field_validator("category")
+    @classmethod
+    def validar_category(cls, value: str) -> str:
+        value = value.strip()
+        if value not in TICKET_CATEGORIES:
+            raise ValueError(f"Categoria invalida: {value}.")
+        return value
+
+    @field_validator("intent", "classification_reason")
+    @classmethod
+    def limpar_texto_opcional(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        value = value.strip()
+        return value or None
 
 
 class TicketStatusUpdate(BaseModel):
@@ -144,6 +184,11 @@ class TicketRead(BaseModel):
     status: str
     priority: str
     source: str
+    category: str
+    intent: str | None
+    classification_confidence: float | None
+    classification_reason: str | None
+    requires_human: bool
     ai_summary: str | None
     last_message_at: datetime | None
     created_at: datetime

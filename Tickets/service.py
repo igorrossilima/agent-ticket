@@ -4,10 +4,23 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from Customers.repository import CustomerRepository
-from Shared.constants import MESSAGE_SENDER_TYPES, TICKET_PRIORITIES, TICKET_SOURCES, TICKET_STATUSES
+from Shared.constants import (
+    DEFAULT_TICKET_CATEGORY,
+    MESSAGE_SENDER_TYPES,
+    TICKET_CATEGORIES,
+    TICKET_PRIORITIES,
+    TICKET_SOURCES,
+    TICKET_STATUSES,
+)
 from Tickets.models import Ticket, TicketMessage
 from Tickets.repository import TicketMessageRepository, TicketRepository
-from Tickets.schemas import TicketAssignmentUpdate, TicketCreate, TicketMessageCreate, TicketStatusUpdate
+from Tickets.schemas import (
+    TicketAssignmentUpdate,
+    TicketClassificationUpdate,
+    TicketCreate,
+    TicketMessageCreate,
+    TicketStatusUpdate,
+)
 from Users.repository import UserRepository
 
 
@@ -42,6 +55,7 @@ class TicketService:
     def criar_ticket(self, payload: TicketCreate) -> Ticket:
         self._validar_valor_controlado(payload.priority, TICKET_PRIORITIES, "priority")
         self._validar_valor_controlado(payload.source, TICKET_SOURCES, "source")
+        self._validar_valor_controlado(payload.category, TICKET_CATEGORIES, "category")
 
         if not self.customers.obter_por_id(payload.customer_id):
             raise CustomerNaoEncontradoError("Cliente do ticket nao encontrado.")
@@ -56,6 +70,11 @@ class TicketService:
             description=payload.description,
             priority=payload.priority,
             source=payload.source,
+            category=payload.category,
+            intent=payload.intent,
+            classification_confidence=payload.classification_confidence,
+            classification_reason=payload.classification_reason,
+            requires_human=payload.requires_human,
             ai_summary=payload.ai_summary,
         )
 
@@ -88,6 +107,27 @@ class TicketService:
             raise UserNaoEncontradoError("Usuario atribuido ao ticket nao encontrado.")
 
         return self.tickets.atribuir_usuario(ticket, payload.assigned_user_id)
+
+    def atualizar_classificacao(
+        self,
+        ticket_id: UUID,
+        payload: TicketClassificationUpdate,
+    ) -> Ticket:
+        self._validar_valor_controlado(payload.category, TICKET_CATEGORIES, "category")
+        ticket = self.obter_ticket(ticket_id)
+
+        ticket.category = payload.category
+        ticket.intent = payload.intent
+        ticket.classification_confidence = payload.classification_confidence
+        ticket.classification_reason = payload.classification_reason
+        ticket.requires_human = payload.requires_human
+        self.session.flush()
+        self.session.refresh(ticket)
+        return ticket
+
+    def aplicar_classificacao_agente(self, ticket_id: UUID, classificacao: dict | None) -> Ticket:
+        payload = self._payload_classificacao_agente(classificacao or {})
+        return self.atualizar_classificacao(ticket_id, payload)
 
     def adicionar_mensagem(self, payload: TicketMessageCreate) -> TicketMessage:
         self._validar_valor_controlado(payload.sender_type, MESSAGE_SENDER_TYPES, "sender_type")
@@ -150,3 +190,37 @@ class TicketService:
     def _validar_valor_controlado(value: str, valores_validos: tuple[str, ...], campo: str) -> None:
         if value not in valores_validos:
             raise ValorTicketInvalidoError(f"Valor invalido para {campo}: {value}.")
+
+    @staticmethod
+    def _payload_classificacao_agente(classificacao: dict) -> TicketClassificationUpdate:
+        category = str(classificacao.get("categoria") or DEFAULT_TICKET_CATEGORY).strip()
+        if category not in TICKET_CATEGORIES:
+            category = DEFAULT_TICKET_CATEGORY
+
+        return TicketClassificationUpdate(
+            category=category,
+            intent=classificacao.get("intencao"),
+            classification_confidence=TicketService._normalizar_confianca(
+                classificacao.get("confianca")
+            ),
+            classification_reason=classificacao.get("justificativa"),
+            requires_human=False,
+        )
+
+    @staticmethod
+    def _normalizar_confianca(value: object) -> float | None:
+        if value is None:
+            return None
+
+        try:
+            confianca = float(value)
+        except (TypeError, ValueError):
+            return None
+
+        if confianca < 0:
+            return 0.0
+
+        if confianca > 1:
+            return 1.0
+
+        return confianca

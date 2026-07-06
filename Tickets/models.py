@@ -4,7 +4,7 @@ from datetime import datetime
 from uuid import UUID as PythonUUID
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, String, Text, false, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -13,6 +13,7 @@ from Shared.constants import (
     DEFAULT_TICKET_PRIORITY,
     DEFAULT_TICKET_SOURCE,
     DEFAULT_TICKET_STATUS,
+    DEFAULT_TICKET_CATEGORY,
 )
 
 
@@ -56,6 +57,23 @@ class Ticket(Base):
         nullable=False,
         default=DEFAULT_TICKET_SOURCE,
         server_default=DEFAULT_TICKET_SOURCE,
+    )
+    category: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default=DEFAULT_TICKET_CATEGORY,
+        server_default=DEFAULT_TICKET_CATEGORY,
+        index=True,
+    )
+    intent: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    classification_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    classification_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    requires_human: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        index=True,
     )
     ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_message_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)

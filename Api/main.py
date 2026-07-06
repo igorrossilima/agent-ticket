@@ -21,10 +21,10 @@ from Tickets.service import (
     UserNaoEncontradoError,
     ValorTicketInvalidoError,
 )
-from Workers.main import executar_fluxo_suporte
+from Workers.main import executar_fluxo_suporte_detalhado
 
 
-FluxoSuporteExecutor = Callable[..., str]
+FluxoSuporteExecutor = Callable[..., object]
 _token_service = TokenService()
 
 app = FastAPI(
@@ -50,7 +50,7 @@ class ChatResponse(BaseModel):
 
 
 async def obter_executor_fluxo() -> FluxoSuporteExecutor:
-    return executar_fluxo_suporte
+    return executar_fluxo_suporte_detalhado
 
 # passo 5
 async def obter_token_service() -> TokenService:
@@ -137,12 +137,14 @@ async def chat(
         raise _converter_erro_ticket_chat(erro) from erro
 
     try: # aqui é pausado o fluxo da API e iniciado o fluxo do Worker
-        resposta = await run_in_threadpool(
+        resultado_fluxo = await run_in_threadpool(
             executor_fluxo,
             mensagem_usuario=mensagem,
             provedor_ia=provedor_ia,
             top_k=request.top_k,
         ) # aqui retorna para o fluxo da API
+        resposta = _extrair_resposta_fluxo(resultado_fluxo)
+        classificacao = _extrair_classificacao_fluxo(resultado_fluxo)
     except ValueError as erro:
         db_session.rollback()
         raise HTTPException(status_code=400, detail=str(erro)) from erro
@@ -154,6 +156,9 @@ async def chat(
         ) from erro
 
     try:
+        if classificacao:
+            ticket_service.aplicar_classificacao_agente(ticket.id, classificacao)
+
         ticket_service.adicionar_mensagem(
             TicketMessageCreate(
                 ticket_id=ticket.id,
@@ -213,6 +218,20 @@ def _gerar_titulo_ticket(mensagem: str) -> str:
         return titulo
 
     return f"{titulo[:77].rstrip()}..."
+
+
+def _extrair_resposta_fluxo(resultado_fluxo) -> str:
+    if isinstance(resultado_fluxo, str):
+        return resultado_fluxo
+
+    return resultado_fluxo.resposta
+
+
+def _extrair_classificacao_fluxo(resultado_fluxo) -> dict | None:
+    if isinstance(resultado_fluxo, str):
+        return None
+
+    return getattr(resultado_fluxo, "classificacao", None)
 
 
 def _converter_erro_ticket_chat(erro: TicketServiceError) -> HTTPException:

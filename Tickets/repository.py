@@ -21,6 +21,11 @@ class TicketRepository:
         status: str = "open",
         priority: str = "medium",
         source: str = "platform",
+        category: str = "outros",
+        intent: str | None = None,
+        classification_confidence: float | None = None,
+        classification_reason: str | None = None,
+        requires_human: bool = False,
         ai_summary: str | None = None,
     ) -> Ticket:
         ticket = Ticket(
@@ -31,6 +36,11 @@ class TicketRepository:
             status=status,
             priority=priority,
             source=source,
+            category=category,
+            intent=intent,
+            classification_confidence=classification_confidence,
+            classification_reason=classification_reason,
+            requires_human=requires_human,
             ai_summary=ai_summary,
         )
         self.session.add(ticket)

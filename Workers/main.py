@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 sys.path.append(str(Path(__file__).resolve().parent.parent)) # volta uma pagina para importar alguma coisa dentro de outro arquivo
@@ -9,6 +10,15 @@ from RAG.utils import VectorDatabaseHelper
 from RAG.structure import DocumentoRAG
 from Agents.classifier import Classifier
 from Agents.support import SupportAgent
+
+
+@dataclass
+class FluxoSuporteResultado:
+    resposta: str
+    classificacao: Dict[str, Any]
+    query_busca: str
+    documentos: List[DocumentoRAG]
+    contexto_wiki: str
 
 
 # junta uma query de busca a partir da mensagem do usuário e da classificação
@@ -60,6 +70,24 @@ def executar_fluxo_suporte(
     agente_suporte: Optional[SupportAgent] = None,
     top_k: int = 3,
 ) -> str:
+    return executar_fluxo_suporte_detalhado(
+        mensagem_usuario=mensagem_usuario,
+        provedor_ia=provedor_ia,
+        classificador=classificador,
+        db=db,
+        agente_suporte=agente_suporte,
+        top_k=top_k,
+    ).resposta
+
+
+def executar_fluxo_suporte_detalhado(
+    mensagem_usuario: str,
+    provedor_ia: str = "openai",
+    classificador: Optional[Classifier] = None,
+    db: Optional[VectorDatabaseHelper] = None,
+    agente_suporte: Optional[SupportAgent] = None,
+    top_k: int = 3,
+) -> FluxoSuporteResultado:
     if not mensagem_usuario or not mensagem_usuario.strip():
         raise ValueError("A mensagem do usuário não pode ser vazia.")
 
@@ -78,10 +106,18 @@ def executar_fluxo_suporte(
     )
     contexto_wiki = formatar_contexto_documentos(documentos)
 
-    return agente_suporte.executar(
+    resposta = agente_suporte.executar(
         mensagem_usuario=mensagem_usuario,
         contexto_wiki=contexto_wiki,
         classificacao=classificacao,
+    )
+
+    return FluxoSuporteResultado(
+        resposta=resposta,
+        classificacao=classificacao,
+        query_busca=query_busca,
+        documentos=documentos,
+        contexto_wiki=contexto_wiki,
     )
 
 

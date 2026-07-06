@@ -5,6 +5,7 @@ from typing import Any, Dict, Union
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from Agents.base import Agent
+from Shared.constants import DEFAULT_TICKET_CATEGORY, TICKET_CATEGORIES
 
 
 NOME_AGENTE_CLASSIFICADOR = "agente_classificador"
@@ -18,8 +19,12 @@ class Classifier(Agent):
 
     @staticmethod
     def normalizar_classificacao(classificacao: Dict[str, Any]) -> Dict[str, Any]:
-        classificacao["categoria"] = classificacao.get("categoria") or "outros"
-        classificacao["confianca"] = classificacao.get("confianca", 0.0)
+        categoria = str(classificacao.get("categoria") or DEFAULT_TICKET_CATEGORY).strip()
+        if categoria not in TICKET_CATEGORIES:
+            categoria = DEFAULT_TICKET_CATEGORY
+
+        classificacao["categoria"] = categoria
+        classificacao["confianca"] = Classifier._normalizar_confianca(classificacao.get("confianca", 0.0))
         classificacao["intencao"] = (
             classificacao.get("intencao") or "nao_identificada"
         )
@@ -30,6 +35,21 @@ class Classifier(Agent):
         )
 
         return classificacao
+
+    @staticmethod
+    def _normalizar_confianca(value: Any) -> float:
+        try:
+            confianca = float(value)
+        except (TypeError, ValueError):
+            return 0.0
+
+        if confianca < 0:
+            return 0.0
+
+        if confianca > 1:
+            return 1.0
+
+        return confianca
 
     def executar(
         self,

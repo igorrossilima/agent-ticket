@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 import httpx
@@ -143,6 +144,39 @@ class ApiChatTest(unittest.TestCase):
         self.assertEqual(mensagens[0].body, "Como identifico equipamento offline?")
         self.assertEqual(mensagens[1].body, "Resposta final do agente.")
         self.assertEqual(mensagens[1].metadata_["top_k"], 4)
+
+    def test_chat_persiste_classificacao_do_fluxo_no_ticket(self):
+        executor = FakeFluxoExecutor(
+            SimpleNamespace(
+                resposta="Resposta com ticket classificado.",
+                classificacao={
+                    "categoria": "eventos",
+                    "confianca": 0.88,
+                    "intencao": "consultar_eventos",
+                    "justificativa": "Cliente quer consultar eventos de velocidade.",
+                },
+            )
+        )
+        self.sobrescrever_executor(executor)
+        customer = self.criar_customer()
+
+        resposta = self.chamar_api(
+            "POST",
+            "/chat",
+            json={
+                "mensagem": "Como vejo eventos de velocidade?",
+                "customer_id": str(customer.id),
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        ticket = TicketRepository(self.db_session).obter_por_id(UUID(resposta.json()["ticket_id"]))
+
+        self.assertEqual(ticket.category, "eventos")
+        self.assertEqual(ticket.intent, "consultar_eventos")
+        self.assertEqual(ticket.classification_confidence, 0.88)
+        self.assertEqual(ticket.classification_reason, "Cliente quer consultar eventos de velocidade.")
+        self.assertFalse(ticket.requires_human)
 
     def test_chat_remove_espacos_extras_da_mensagem(self):
         executor = FakeFluxoExecutor()

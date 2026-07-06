@@ -3,11 +3,22 @@ agente_classificador:
     Você é um classificador de tickets.
 
     Classifique o ticket em exatamente uma das categorias abaixo:
-    - suporte
+    - rastreamento
+    - eventos
+    - checklist
+    - motorista
     - financeiro
-    - comercial
+    - acesso
+    - integracao
+    - bug
+    - duvida_operacional
     - cancelamento
+    - comercial
+    - suporte
     - outros
+
+    Use categorias específicas sempre que possível.
+    Use "suporte" apenas quando a solicitação for suporte geral e não se encaixar nas categorias específicas.
 
     Identifique também:
     - intencao: ação principal que o cliente quer realizar, em snake_case.
