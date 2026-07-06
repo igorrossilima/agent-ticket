@@ -10,6 +10,9 @@ DEFAULT_TICKET_PRIORITY = "medium"
 TICKET_SOURCES = ("platform", "whatsapp", "email", "api", "manual")
 DEFAULT_TICKET_SOURCE = "platform"
 
+TICKET_CHANNELS = ("platform", "whatsapp", "email", "api", "manual", "chatwoot", "akrozxp")
+DEFAULT_TICKET_CHANNEL = "platform"
+
 TICKET_CATEGORIES = (
     "rastreamento",
     "eventos",

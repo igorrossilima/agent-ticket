@@ -71,6 +71,7 @@ def executar_fluxo_suporte(
     agente_suporte: Optional[SupportAgent] = None,
     top_k: int = 3,
     historico_atendimento: str | None = None,
+    classificacao_inicial: Optional[Dict[str, Any]] = None,
 ) -> str:
     return executar_fluxo_suporte_detalhado(
         mensagem_usuario=mensagem_usuario,
@@ -80,6 +81,7 @@ def executar_fluxo_suporte(
         agente_suporte=agente_suporte,
         top_k=top_k,
         historico_atendimento=historico_atendimento,
+        classificacao_inicial=classificacao_inicial,
     ).resposta
 
 
@@ -91,6 +93,7 @@ def executar_fluxo_suporte_detalhado(
     agente_suporte: Optional[SupportAgent] = None,
     top_k: int = 3,
     historico_atendimento: str | None = None,
+    classificacao_inicial: Optional[Dict[str, Any]] = None,
 ) -> FluxoSuporteResultado:
     if not mensagem_usuario or not mensagem_usuario.strip():
         raise ValueError("A mensagem do usuário não pode ser vazia.")
@@ -99,7 +102,7 @@ def executar_fluxo_suporte_detalhado(
     db = db or VectorDatabaseHelper()
     agente_suporte = agente_suporte or SupportAgent(provedor_ia=provedor_ia)
 
-    classificacao = classificador.executar(mensagem_usuario)
+    classificacao = classificacao_inicial or classificador.executar(mensagem_usuario)
     query_busca = montar_query_busca(
         mensagem_usuario=mensagem_usuario,
         classificacao=classificacao,

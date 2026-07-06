@@ -21,6 +21,8 @@ class TicketRepository:
         status: str = "open",
         priority: str = "medium",
         source: str = "platform",
+        channel: str = "platform",
+        external_conversation_id: str | None = None,
         category: str = "outros",
         intent: str | None = None,
         classification_confidence: float | None = None,
@@ -36,6 +38,8 @@ class TicketRepository:
             status=status,
             priority=priority,
             source=source,
+            channel=channel,
+            external_conversation_id=external_conversation_id,
             category=category,
             intent=intent,
             classification_confidence=classification_confidence,
@@ -92,6 +96,33 @@ class TicketRepository:
         )
         return list(self.session.execute(statement).scalars().all())
 
+    def listar_ativos_por_cliente(
+        self,
+        customer_id: UUID,
+        *,
+        channel: str | None = None,
+        external_conversation_id: str | None = None,
+        limit: int = 10,
+    ) -> list[Ticket]:
+        statement = (
+            select(Ticket)
+            .where(Ticket.customer_id == customer_id)
+            .where(~Ticket.status.in_(("resolved", "closed")))
+        )
+
+        if channel:
+            statement = statement.where(Ticket.channel == channel)
+
+        if external_conversation_id:
+            statement = statement.where(Ticket.external_conversation_id == external_conversation_id)
+
+        statement = (
+            statement
+            .order_by(Ticket.last_message_at.desc().nullslast(), Ticket.created_at.desc())
+            .limit(limit)
+        )
+        return list(self.session.execute(statement).scalars().all())
+
     def atualizar_status(self, ticket: Ticket, status: str) -> Ticket:
         ticket.status = status
         self.session.flush()
@@ -117,6 +148,7 @@ class TicketMessageRepository:
         body: str,
         sender_user_id: UUID | None = None,
         sender_customer_id: UUID | None = None,
+        external_message_id: str | None = None,
         metadata: dict | None = None,
         atualizar_ticket: bool = True,
     ) -> TicketMessage:
@@ -125,6 +157,7 @@ class TicketMessageRepository:
             sender_type=sender_type,
             sender_user_id=sender_user_id,
             sender_customer_id=sender_customer_id,
+            external_message_id=external_message_id,
             body=body,
             metadata_=metadata,
         )

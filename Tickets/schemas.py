@@ -6,10 +6,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from Shared.constants import (
     DEFAULT_TICKET_CATEGORY,
+    DEFAULT_TICKET_CHANNEL,
     DEFAULT_TICKET_PRIORITY,
     DEFAULT_TICKET_SOURCE,
     MESSAGE_SENDER_TYPES,
     TICKET_CATEGORIES,
+    TICKET_CHANNELS,
     TICKET_PRIORITIES,
     TICKET_SOURCES,
     TICKET_STATUSES,
@@ -23,6 +25,8 @@ class TicketCreate(BaseModel):
     assigned_user_id: UUID | None = None
     priority: str = DEFAULT_TICKET_PRIORITY
     source: str = DEFAULT_TICKET_SOURCE
+    channel: str = DEFAULT_TICKET_CHANNEL
+    external_conversation_id: str | None = Field(default=None, max_length=120)
     category: str = DEFAULT_TICKET_CATEGORY
     intent: str | None = None
     classification_confidence: float | None = Field(default=None, ge=0, le=1)
@@ -38,7 +42,7 @@ class TicketCreate(BaseModel):
             raise ValueError("O titulo do ticket nao pode ser vazio.")
         return value
 
-    @field_validator("description", "intent", "classification_reason", "ai_summary")
+    @field_validator("description", "external_conversation_id", "intent", "classification_reason", "ai_summary")
     @classmethod
     def limpar_texto_opcional(cls, value: str | None) -> str | None:
         if value is None:
@@ -61,6 +65,14 @@ class TicketCreate(BaseModel):
         value = value.strip()
         if value not in TICKET_SOURCES:
             raise ValueError(f"Origem invalida: {value}.")
+        return value
+
+    @field_validator("channel")
+    @classmethod
+    def validar_channel(cls, value: str) -> str:
+        value = value.strip()
+        if value not in TICKET_CHANNELS:
+            raise ValueError(f"Canal invalido: {value}.")
         return value
 
     @field_validator("category")
@@ -119,6 +131,7 @@ class TicketMessageCreate(BaseModel):
     body: str = Field(min_length=1)
     sender_user_id: UUID | None = None
     sender_customer_id: UUID | None = None
+    external_message_id: str | None = Field(default=None, max_length=120)
     metadata: dict[str, Any] | None = None
 
     @field_validator("sender_type")
@@ -136,6 +149,15 @@ class TicketMessageCreate(BaseModel):
         if not value:
             raise ValueError("A mensagem nao pode ser vazia.")
         return value
+
+    @field_validator("external_message_id")
+    @classmethod
+    def limpar_external_message_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        value = value.strip()
+        return value or None
 
 
 class TicketMessageCreateRequest(BaseModel):
@@ -143,6 +165,7 @@ class TicketMessageCreateRequest(BaseModel):
     body: str = Field(min_length=1)
     sender_user_id: UUID | None = None
     sender_customer_id: UUID | None = None
+    external_message_id: str | None = Field(default=None, max_length=120)
     metadata: dict[str, Any] | None = None
 
     @field_validator("sender_type")
@@ -160,6 +183,15 @@ class TicketMessageCreateRequest(BaseModel):
         if not value:
             raise ValueError("A mensagem nao pode ser vazia.")
         return value
+
+    @field_validator("external_message_id")
+    @classmethod
+    def limpar_external_message_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        value = value.strip()
+        return value or None
 
 
 class TicketMessageRead(BaseModel):
@@ -168,6 +200,7 @@ class TicketMessageRead(BaseModel):
     sender_type: str
     sender_user_id: UUID | None
     sender_customer_id: UUID | None
+    external_message_id: str | None
     body: str
     metadata: dict[str, Any] | None = Field(default=None, validation_alias="metadata_")
     created_at: datetime
@@ -184,6 +217,8 @@ class TicketRead(BaseModel):
     status: str
     priority: str
     source: str
+    channel: str
+    external_conversation_id: str | None
     category: str
     intent: str | None
     classification_confidence: float | None

@@ -30,6 +30,8 @@ class CustomerService:
             email=payload.email,
             phone=payload.phone,
             document=payload.document,
+            external_contact_id=payload.external_contact_id,
+            external_channel=payload.external_channel,
         )
 
     def obter_customer(self, customer_id: UUID) -> Customer:
@@ -82,4 +84,6 @@ class CustomerService:
             email=campos.get("email", customer.email),
             phone=campos.get("phone", customer.phone),
             document=campos.get("document", customer.document),
+            external_contact_id=campos.get("external_contact_id", customer.external_contact_id),
+            external_channel=campos.get("external_channel", customer.external_channel),
         )

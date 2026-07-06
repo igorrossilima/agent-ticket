@@ -1,5 +1,8 @@
 const state = {
   token: localStorage.getItem("agent_ticket_token") || "",
+  user: parseStoredJson("agent_ticket_user"),
+  customer: parseStoredJson("agent_ticket_customer"),
+  ticket: parseStoredJson("agent_ticket_ticket"),
   customerId: localStorage.getItem("agent_ticket_customer_id") || "",
   ticketId: localStorage.getItem("agent_ticket_ticket_id") || "",
 };
@@ -14,11 +17,17 @@ function init() {
   el("healthButton").addEventListener("click", testarHealth);
   el("registerButton").addEventListener("click", registrar);
   el("loginButton").addEventListener("click", login);
+  el("meButton").addEventListener("click", carregarUsuarioAtual);
   el("createCustomerButton").addEventListener("click", criarCustomer);
   el("listCustomersButton").addEventListener("click", listarCustomers);
   el("chatButton").addEventListener("click", enviarChat);
   el("getTicketButton").addEventListener("click", buscarTicket);
+  el("assignMeButton").addEventListener("click", atribuirParaMim);
+  el("queueOpenButton").addEventListener("click", () => listarTickets({ status: "open" }));
+  el("queuePendingButton").addEventListener("click", () => listarTickets({ status: "pending" }));
+  el("queueMineButton").addEventListener("click", listarMinhaFila);
   el("token").addEventListener("input", salvarTokenManual);
+  renderEstado();
 }
 
 async function api(path, options = {}) {
@@ -72,19 +81,64 @@ function mostrarResposta(payload) {
   el("output").textContent = JSON.stringify(payload, null, 2);
 }
 
+function parseStoredJson(key) {
+  const raw = localStorage.getItem(key);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 function salvarTokenManual() {
   state.token = el("token").value.trim();
   localStorage.setItem("agent_ticket_token", state.token);
+
+  if (!state.token) {
+    state.user = null;
+    localStorage.removeItem("agent_ticket_user");
+    renderEstado();
+  }
 }
 
 function salvarToken(data) {
-  if (!data?.access_token) {
+  if (data?.access_token) {
+    state.token = data.access_token;
+    el("token").value = data.access_token;
+    localStorage.setItem("agent_ticket_token", data.access_token);
+  }
+
+  if (data?.user) {
+    salvarUsuario(data.user);
+  }
+}
+
+function salvarUsuario(user) {
+  if (!user?.id) {
     return;
   }
 
-  state.token = data.access_token;
-  el("token").value = data.access_token;
-  localStorage.setItem("agent_ticket_token", data.access_token);
+  state.user = user;
+  localStorage.setItem("agent_ticket_user", JSON.stringify(user));
+  renderEstado();
+}
+
+function salvarCustomer(customer) {
+  if (!customer?.id) {
+    return;
+  }
+
+  state.customer = customer;
+  state.customerId = customer.id;
+  el("customerId").value = customer.id;
+  localStorage.setItem("agent_ticket_customer", JSON.stringify(customer));
+  localStorage.setItem("agent_ticket_customer_id", customer.id);
+  renderEstado();
 }
 
 function salvarCustomerId(customerId) {
@@ -95,16 +149,7 @@ function salvarCustomerId(customerId) {
   state.customerId = customerId;
   el("customerId").value = customerId;
   localStorage.setItem("agent_ticket_customer_id", customerId);
-}
-
-function salvarTicketId(ticketId) {
-  if (!ticketId) {
-    return;
-  }
-
-  state.ticketId = ticketId;
-  el("ticketId").value = ticketId;
-  localStorage.setItem("agent_ticket_ticket_id", ticketId);
+  renderEstado();
 }
 
 async function testarHealth() {
@@ -135,6 +180,11 @@ async function login() {
   salvarToken(data);
 }
 
+async function carregarUsuarioAtual() {
+  const user = await api("/auth/me");
+  salvarUsuario(user);
+}
+
 async function criarCustomer() {
   const data = await api("/customers", {
     method: "POST",
@@ -145,13 +195,13 @@ async function criarCustomer() {
       document: el("customerDocument").value,
     }),
   });
-  salvarCustomerId(data?.id);
+  salvarCustomer(data);
 }
 
 async function listarCustomers() {
   const data = await api("/customers");
   if (Array.isArray(data) && data[0]?.id && !el("customerId").value.trim()) {
-    salvarCustomerId(data[0].id);
+    salvarCustomer(data[0]);
   }
 }
 
@@ -172,7 +222,9 @@ async function enviarChat() {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  salvarTicketId(data?.ticket_id);
+  if (data?.ticket_id) {
+    await carregarTicket(data.ticket_id);
+  }
 }
 
 async function buscarTicket() {
@@ -182,7 +234,115 @@ async function buscarTicket() {
     return;
   }
 
-  await api(`/tickets/${ticketId}`);
+  await carregarTicket(ticketId);
+}
+
+async function carregarTicket(ticketId) {
+  const ticket = await api(`/tickets/${ticketId}`);
+  salvarTicket(ticket);
+  return ticket;
+}
+
+function salvarTicket(ticket) {
+  if (!ticket?.id) {
+    return;
+  }
+
+  state.ticket = ticket;
+  state.ticketId = ticket.id;
+  el("ticketId").value = ticket.id;
+  localStorage.setItem("agent_ticket_ticket", JSON.stringify(ticket));
+  localStorage.setItem("agent_ticket_ticket_id", ticket.id);
+  renderEstado();
+}
+
+async function atribuirParaMim() {
+  const ticketId = el("ticketId").value.trim();
+  const userId = state.user?.id;
+
+  if (!ticketId) {
+    mostrarResposta({ ok: false, detail: "Informe um ticket_id." });
+    return;
+  }
+
+  if (!userId) {
+    mostrarResposta({ ok: false, detail: "Faca login para carregar seu user_id." });
+    return;
+  }
+
+  const ticket = await api(`/tickets/${ticketId}/assignment`, {
+    method: "PATCH",
+    body: JSON.stringify({ assigned_user_id: userId }),
+  });
+  salvarTicket(ticket);
+}
+
+async function listarTickets(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  if (filters.assigned_user_id) {
+    params.set("assigned_user_id", filters.assigned_user_id);
+  }
+
+  await api(`/tickets${params.toString() ? `?${params}` : ""}`);
+}
+
+async function listarMinhaFila() {
+  if (!state.user?.id) {
+    mostrarResposta({ ok: false, detail: "Faca login para carregar seu user_id." });
+    return;
+  }
+
+  await listarTickets({ assigned_user_id: state.user.id });
+}
+
+function renderEstado() {
+  const ticket = state.ticket;
+  const ultimaMensagemIa = ticket?.messages
+    ?.slice()
+    .reverse()
+    .find((message) => message.sender_type === "ai_agent");
+  const metadata = ultimaMensagemIa?.metadata || {};
+
+  el("summaryUser").textContent = state.user
+    ? `${state.user.name} (${state.user.role})`
+    : "-";
+  el("summaryCustomer").textContent = state.customer
+    ? `${state.customer.name || state.customer.email} (${state.customer.id})`
+    : state.customerId || "-";
+  el("summaryTicket").textContent = ticket?.id || state.ticketId || "-";
+  el("summaryStatus").textContent = ticket?.status || "-";
+  el("summaryCategory").textContent = ticket?.category || "-";
+  el("summaryHandoff").textContent = ticket
+    ? ticket.requires_human
+      ? "sim"
+      : "nao"
+    : "-";
+
+  el("classificationOutput").textContent = JSON.stringify(
+    metadata.classification || ticketClassification(ticket),
+    null,
+    2,
+  );
+  el("ragOutput").textContent = JSON.stringify(metadata.rag_docs || [], null, 2);
+}
+
+function ticketClassification(ticket) {
+  if (!ticket) {
+    return {};
+  }
+
+  return {
+    category: ticket.category,
+    intent: ticket.intent,
+    confidence: ticket.classification_confidence,
+    reason: ticket.classification_reason,
+    requires_human: ticket.requires_human,
+  };
 }
 
 init();

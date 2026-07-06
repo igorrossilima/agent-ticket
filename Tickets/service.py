@@ -10,6 +10,7 @@ from Shared.constants import (
     DEFAULT_TICKET_STATUS,
     MESSAGE_SENDER_TYPES,
     TICKET_CATEGORIES,
+    TICKET_CHANNELS,
     TICKET_PRIORITIES,
     TICKET_SOURCES,
     TICKET_STATUSES,
@@ -57,6 +58,7 @@ class TicketService:
     def criar_ticket(self, payload: TicketCreate) -> Ticket:
         self._validar_valor_controlado(payload.priority, TICKET_PRIORITIES, "priority")
         self._validar_valor_controlado(payload.source, TICKET_SOURCES, "source")
+        self._validar_valor_controlado(payload.channel, TICKET_CHANNELS, "channel")
         self._validar_valor_controlado(payload.category, TICKET_CATEGORIES, "category")
 
         if not self.customers.obter_por_id(payload.customer_id):
@@ -72,6 +74,8 @@ class TicketService:
             description=payload.description,
             priority=payload.priority,
             source=payload.source,
+            channel=payload.channel,
+            external_conversation_id=payload.external_conversation_id,
             category=payload.category,
             intent=payload.intent,
             classification_confidence=payload.classification_confidence,
@@ -108,6 +112,21 @@ class TicketService:
             assigned_user_id=assigned_user_id,
             limit=limit,
             offset=offset,
+        )
+
+    def listar_tickets_ativos_cliente(
+        self,
+        customer_id: UUID,
+        *,
+        channel: str | None = None,
+        external_conversation_id: str | None = None,
+        limit: int = 10,
+    ) -> list[Ticket]:
+        return self.tickets.listar_ativos_por_cliente(
+            customer_id,
+            channel=channel,
+            external_conversation_id=external_conversation_id,
+            limit=limit,
         )
 
     def atualizar_status(self, ticket_id: UUID, payload: TicketStatusUpdate) -> Ticket:
@@ -187,6 +206,7 @@ class TicketService:
             sender_type=payload.sender_type,
             sender_user_id=payload.sender_user_id,
             sender_customer_id=payload.sender_customer_id,
+            external_message_id=payload.external_message_id,
             body=payload.body,
             metadata=payload.metadata,
         )

@@ -23,6 +23,8 @@ class Customer(Base):
     email: Mapped[str | None] = mapped_column(String(320), nullable=True, index=True)
     phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     document: Mapped[str | None] = mapped_column(String(30), nullable=True, index=True)
+    external_contact_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    external_channel: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

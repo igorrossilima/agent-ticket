@@ -11,7 +11,7 @@
       <header class="header">
         <div>
           <h1>Teste Agent Ticket</h1>
-          <p>Frontend local minimo para testar a API.</p>
+          <p>Frontend local minimo para testar a API e enxergar o fluxo do ticket.</p>
         </div>
         <button id="healthButton" type="button">Testar health</button>
       </header>
@@ -42,12 +42,13 @@
             <input id="authPassword" type="password" value="teste123" />
           </label>
           <div class="actions">
-            <button id="registerButton" type="button">Registrar</button>
+            <button id="registerButton" type="button">Criar user</button>
             <button id="loginButton" type="button">Login</button>
+            <button id="meButton" type="button">Validar token</button>
           </div>
           <label>
             Token
-            <textarea id="token" rows="5" placeholder="Token gerado no login/register"></textarea>
+            <textarea id="token" rows="5" placeholder="Token gerado no login"></textarea>
           </label>
         </article>
 
@@ -108,6 +109,50 @@
           <div class="actions">
             <button id="chatButton" type="button">Enviar chat</button>
             <button id="getTicketButton" type="button">Buscar historico</button>
+            <button id="assignMeButton" type="button">Atribuir para mim</button>
+            <button id="queueOpenButton" type="button">Fila open</button>
+            <button id="queuePendingButton" type="button">Fila pending</button>
+            <button id="queueMineButton" type="button">Minha fila</button>
+          </div>
+        </article>
+
+        <article class="panel wide">
+          <h2>Estado do fluxo</h2>
+          <div class="summary-grid">
+            <div class="summary-box">
+              <span>Operador logado</span>
+              <strong id="summaryUser">-</strong>
+            </div>
+            <div class="summary-box">
+              <span>Customer</span>
+              <strong id="summaryCustomer">-</strong>
+            </div>
+            <div class="summary-box">
+              <span>Ticket</span>
+              <strong id="summaryTicket">-</strong>
+            </div>
+            <div class="summary-box">
+              <span>Status</span>
+              <strong id="summaryStatus">-</strong>
+            </div>
+            <div class="summary-box">
+              <span>Categoria</span>
+              <strong id="summaryCategory">-</strong>
+            </div>
+            <div class="summary-box">
+              <span>Handoff humano</span>
+              <strong id="summaryHandoff">-</strong>
+            </div>
+          </div>
+          <div class="details-grid">
+            <section>
+              <h3>Ultima classificacao</h3>
+              <pre id="classificationOutput" class="mini-output">{}</pre>
+            </section>
+            <section>
+              <h3>RAG usado na resposta</h3>
+              <pre id="ragOutput" class="mini-output">[]</pre>
+            </section>
           </div>
         </article>
 

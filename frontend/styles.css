@@ -37,6 +37,11 @@ h2 {
   margin-bottom: 14px;
 }
 
+h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
 p {
   color: #617080;
   margin-top: 4px;
@@ -127,10 +132,50 @@ pre {
   white-space: pre-wrap;
 }
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-box {
+  border: 1px solid #d8e0e8;
+  border-radius: 8px;
+  min-height: 72px;
+  padding: 12px;
+}
+
+.summary-box span {
+  color: #617080;
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.summary-box strong {
+  display: block;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mini-output {
+  min-height: 150px;
+}
+
 @media (max-width: 760px) {
   .header,
   .grid,
-  .row {
+  .row,
+  .summary-grid,
+  .details-grid {
     display: block;
   }
 

@@ -18,12 +18,16 @@ class CustomerRepository:
         email: str | None = None,
         phone: str | None = None,
         document: str | None = None,
+        external_contact_id: str | None = None,
+        external_channel: str | None = None,
     ) -> Customer:
         customer = Customer(
             name=name,
             email=email,
             phone=phone,
             document=document,
+            external_contact_id=external_contact_id,
+            external_channel=external_channel,
         )
         self.session.add(customer)
         self.session.flush()
@@ -39,6 +43,23 @@ class CustomerRepository:
 
     def obter_por_documento(self, document: str) -> Customer | None:
         statement = select(Customer).where(Customer.document == document).limit(1)
+        return self.session.execute(statement).scalar_one_or_none()
+
+    def obter_por_external_contact_id(
+        self,
+        external_contact_id: str,
+        *,
+        external_channel: str | None = None,
+    ) -> Customer | None:
+        statement = select(Customer).where(Customer.external_contact_id == external_contact_id)
+
+        if external_channel:
+            statement = statement.where(Customer.external_channel == external_channel)
+
+        return self.session.execute(statement.limit(1)).scalar_one_or_none()
+
+    def obter_por_phone(self, phone: str) -> Customer | None:
+        statement = select(Customer).where(Customer.phone == phone).limit(1)
         return self.session.execute(statement).scalar_one_or_none()
 
     def listar(self, *, limit: int = 50, offset: int = 0) -> list[Customer]:
@@ -58,6 +79,8 @@ class CustomerRepository:
         email: str | None = None,
         phone: str | None = None,
         document: str | None = None,
+        external_contact_id: str | None = None,
+        external_channel: str | None = None,
     ) -> Customer:
         if name is not None:
             customer.name = name
@@ -65,6 +88,8 @@ class CustomerRepository:
         customer.email = email
         customer.phone = phone
         customer.document = document
+        customer.external_contact_id = external_contact_id
+        customer.external_channel = external_channel
 
         self.session.flush()
         self.session.refresh(customer)

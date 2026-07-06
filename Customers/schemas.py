@@ -9,6 +9,8 @@ class CustomerCreate(BaseModel):
     email: str | None = Field(default=None, max_length=320)
     phone: str | None = Field(default=None, max_length=30)
     document: str | None = Field(default=None, max_length=30)
+    external_contact_id: str | None = Field(default=None, max_length=120)
+    external_channel: str | None = Field(default=None, max_length=50)
 
     @field_validator("name")
     @classmethod
@@ -18,7 +20,7 @@ class CustomerCreate(BaseModel):
             raise ValueError("O nome do cliente nao pode ser vazio.")
         return value
 
-    @field_validator("email", "phone", "document")
+    @field_validator("email", "phone", "document", "external_contact_id", "external_channel")
     @classmethod
     def limpar_texto_opcional(cls, value: str | None) -> str | None:
         if value is None:
@@ -33,6 +35,8 @@ class CustomerUpdate(BaseModel):
     email: str | None = Field(default=None, max_length=320)
     phone: str | None = Field(default=None, max_length=30)
     document: str | None = Field(default=None, max_length=30)
+    external_contact_id: str | None = Field(default=None, max_length=120)
+    external_channel: str | None = Field(default=None, max_length=50)
 
     @field_validator("name")
     @classmethod
@@ -45,7 +49,7 @@ class CustomerUpdate(BaseModel):
             raise ValueError("O nome do cliente nao pode ser vazio.")
         return value
 
-    @field_validator("email", "phone", "document")
+    @field_validator("email", "phone", "document", "external_contact_id", "external_channel")
     @classmethod
     def limpar_texto_opcional(cls, value: str | None) -> str | None:
         if value is None:
@@ -61,6 +65,8 @@ class CustomerRead(BaseModel):
     email: str | None
     phone: str | None
     document: str | None
+    external_contact_id: str | None
+    external_channel: str | None
     created_at: datetime
     updated_at: datetime
 
