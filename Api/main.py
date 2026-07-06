@@ -1,7 +1,9 @@
+import unicodedata
 from typing import Callable, Optional
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
@@ -25,6 +27,7 @@ from Workers.main import executar_fluxo_suporte_detalhado
 
 
 FluxoSuporteExecutor = Callable[..., object]
+HISTORICO_CHAT_LIMITE = 10
 _token_service = TokenService()
 
 app = FastAPI(
@@ -124,6 +127,12 @@ async def chat(
             request=request,
             mensagem=mensagem,
         )
+        historico_atendimento = _formatar_historico_atendimento(
+            ticket_service.listar_mensagens_ticket(
+                ticket.id,
+                limit=HISTORICO_CHAT_LIMITE,
+            )
+        )
         ticket_service.adicionar_mensagem(
             TicketMessageCreate(
                 ticket_id=ticket.id,
@@ -142,9 +151,12 @@ async def chat(
             mensagem_usuario=mensagem,
             provedor_ia=provedor_ia,
             top_k=request.top_k,
+            historico_atendimento=historico_atendimento,
         ) # aqui retorna para o fluxo da API
         resposta = _extrair_resposta_fluxo(resultado_fluxo)
         classificacao = _extrair_classificacao_fluxo(resultado_fluxo)
+        documentos_rag = _extrair_documentos_fluxo(resultado_fluxo)
+        requer_humano = _resposta_requer_handoff_humano(resposta)
     except ValueError as erro:
         db_session.rollback()
         raise HTTPException(status_code=400, detail=str(erro)) from erro
@@ -157,19 +169,28 @@ async def chat(
 
     try:
         if classificacao:
-            ticket_service.aplicar_classificacao_agente(ticket.id, classificacao)
+            ticket_service.aplicar_classificacao_agente(
+                ticket.id,
+                classificacao,
+                requires_human=requer_humano,
+            )
 
         ticket_service.adicionar_mensagem(
             TicketMessageCreate(
                 ticket_id=ticket.id,
                 sender_type="ai_agent",
                 body=resposta,
-                metadata={
-                    "provedor_ia": provedor_ia,
-                    "top_k": request.top_k,
-                },
+                metadata=_montar_metadata_mensagem_ia(
+                    classificacao=classificacao,
+                    documentos_rag=documentos_rag,
+                    top_k=request.top_k,
+                    provedor_ia=provedor_ia,
+                ),
             )
         )
+        if requer_humano:
+            ticket_service.marcar_handoff_humano(ticket.id)
+
         db_session.commit()
         db_session.refresh(ticket)
     except TicketServiceError as erro:
@@ -232,6 +253,85 @@ def _extrair_classificacao_fluxo(resultado_fluxo) -> dict | None:
         return None
 
     return getattr(resultado_fluxo, "classificacao", None)
+
+
+def _extrair_documentos_fluxo(resultado_fluxo) -> list:
+    if isinstance(resultado_fluxo, str):
+        return []
+
+    return getattr(resultado_fluxo, "documentos", None) or []
+
+
+def _montar_metadata_mensagem_ia(
+    *,
+    classificacao: dict | None,
+    documentos_rag: list,
+    top_k: int,
+    provedor_ia: str,
+) -> dict:
+    return {
+        "classification": jsonable_encoder(classificacao or {}),
+        "rag_docs": _serializar_documentos_rag(documentos_rag),
+        "top_k": top_k,
+        "provedor_ia": provedor_ia,
+    }
+
+
+def _serializar_documentos_rag(documentos_rag: list) -> list[dict]:
+    documentos = []
+
+    for documento in documentos_rag:
+        documentos.append(
+            jsonable_encoder(
+                {
+                    "id": getattr(documento, "id", None),
+                    "score": getattr(documento, "score", None),
+                    "metadata": getattr(documento, "metadados", {}) or {},
+                    "text": getattr(documento, "text", ""),
+                }
+            )
+        )
+
+    return documentos
+
+
+def _formatar_historico_atendimento(mensagens: list) -> str:
+    if not mensagens:
+        return ""
+
+    rotulos = {
+        "customer": "Cliente",
+        "user": "Atendente",
+        "ai_agent": "Agente IA",
+        "system": "Sistema",
+    }
+    linhas = []
+
+    for mensagem in mensagens:
+        rotulo = rotulos.get(mensagem.sender_type, mensagem.sender_type)
+        linhas.append(f"{rotulo}: {mensagem.body}")
+
+    return "\n".join(linhas)
+
+
+def _resposta_requer_handoff_humano(resposta: str) -> bool:
+    texto = _normalizar_texto_busca(resposta)
+    frases_handoff = (
+        "nao encontrei informacao suficiente",
+        "nao encontrou informacao suficiente",
+        "nao ha informacao suficiente",
+        "nao existe informacao suficiente",
+        "sem informacao suficiente",
+    )
+    return any(frase in texto for frase in frases_handoff)
+
+
+def _normalizar_texto_busca(texto: str) -> str:
+    texto_normalizado = unicodedata.normalize("NFKD", texto or "")
+    texto_sem_acentos = "".join(
+        char for char in texto_normalizado if not unicodedata.combining(char)
+    )
+    return texto_sem_acentos.lower()
 
 
 def _converter_erro_ticket_chat(erro: TicketServiceError) -> HTTPException:

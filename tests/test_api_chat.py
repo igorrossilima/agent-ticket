@@ -12,6 +12,7 @@ from Auth.token_service import TokenService
 from Customers.repository import CustomerRepository
 from Postgres.config import obter_config_postgres
 from Postgres.session import obter_sessao_db
+from RAG.structure import DocumentoRAG
 from Tickets.repository import TicketMessageRepository, TicketRepository
 from Users.repository import UserRepository
 
@@ -144,6 +145,9 @@ class ApiChatTest(unittest.TestCase):
         self.assertEqual(mensagens[0].body, "Como identifico equipamento offline?")
         self.assertEqual(mensagens[1].body, "Resposta final do agente.")
         self.assertEqual(mensagens[1].metadata_["top_k"], 4)
+        self.assertEqual(mensagens[1].metadata_["provedor_ia"], "openai")
+        self.assertEqual(mensagens[1].metadata_["classification"], {})
+        self.assertEqual(mensagens[1].metadata_["rag_docs"], [])
 
     def test_chat_persiste_classificacao_do_fluxo_no_ticket(self):
         executor = FakeFluxoExecutor(
@@ -155,6 +159,14 @@ class ApiChatTest(unittest.TestCase):
                     "intencao": "consultar_eventos",
                     "justificativa": "Cliente quer consultar eventos de velocidade.",
                 },
+                documentos=[
+                    DocumentoRAG(
+                        id="wiki-eventos-1",
+                        text="Eventos de velocidade ficam na tela de eventos.",
+                        metadados={"documento_origem_id": "wiki-eventos"},
+                        score=0.91,
+                    )
+                ],
             )
         )
         self.sobrescrever_executor(executor)
@@ -177,6 +189,48 @@ class ApiChatTest(unittest.TestCase):
         self.assertEqual(ticket.classification_confidence, 0.88)
         self.assertEqual(ticket.classification_reason, "Cliente quer consultar eventos de velocidade.")
         self.assertFalse(ticket.requires_human)
+        mensagem_ia = TicketMessageRepository(self.db_session).listar_por_ticket(ticket.id)[1]
+        self.assertEqual(mensagem_ia.metadata_["classification"]["categoria"], "eventos")
+        self.assertEqual(mensagem_ia.metadata_["rag_docs"][0]["id"], "wiki-eventos-1")
+        self.assertEqual(mensagem_ia.metadata_["rag_docs"][0]["score"], 0.91)
+        self.assertEqual(
+            mensagem_ia.metadata_["rag_docs"][0]["metadata"]["documento_origem_id"],
+            "wiki-eventos",
+        )
+
+    def test_chat_marca_handoff_humano_quando_resposta_nao_tem_base_suficiente(self):
+        executor = FakeFluxoExecutor(
+            SimpleNamespace(
+                resposta=(
+                    "Não encontrei informação suficiente na base da wiki. "
+                    "Aguarde um atendente."
+                ),
+                classificacao={
+                    "categoria": "outros",
+                    "confianca": 0.3,
+                    "intencao": "nao_identificada",
+                    "justificativa": "Base insuficiente.",
+                },
+                documentos=[],
+            )
+        )
+        self.sobrescrever_executor(executor)
+        customer = self.criar_customer()
+
+        resposta = self.chamar_api(
+            "POST",
+            "/chat",
+            json={
+                "mensagem": "O que voces sabem fazer?",
+                "customer_id": str(customer.id),
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        ticket = TicketRepository(self.db_session).obter_por_id(UUID(resposta.json()["ticket_id"]))
+
+        self.assertTrue(ticket.requires_human)
+        self.assertEqual(ticket.status, "pending")
 
     def test_chat_remove_espacos_extras_da_mensagem(self):
         executor = FakeFluxoExecutor()
@@ -268,6 +322,10 @@ class ApiChatTest(unittest.TestCase):
         self.assertEqual(primeira_resposta.status_code, 200)
         self.assertEqual(segunda_resposta.status_code, 200)
         self.assertEqual(primeira_resposta.json()["ticket_id"], segunda_resposta.json()["ticket_id"])
+        self.assertEqual(executor.chamadas[0]["historico_atendimento"], "")
+        self.assertIn("Cliente: Primeira mensagem", executor.chamadas[1]["historico_atendimento"])
+        self.assertIn("Agente IA: Resposta final do agente.", executor.chamadas[1]["historico_atendimento"])
+        self.assertNotIn("Segunda mensagem", executor.chamadas[1]["historico_atendimento"])
         mensagens = TicketMessageRepository(self.db_session).listar_por_ticket(UUID(ticket_id))
         self.assertEqual(len(mensagens), 4)
 

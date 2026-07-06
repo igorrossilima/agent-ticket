@@ -19,6 +19,7 @@ class FluxoSuporteResultado:
     query_busca: str
     documentos: List[DocumentoRAG]
     contexto_wiki: str
+    historico_atendimento: str
 
 
 # junta uma query de busca a partir da mensagem do usuário e da classificação
@@ -69,6 +70,7 @@ def executar_fluxo_suporte(
     db: Optional[VectorDatabaseHelper] = None,
     agente_suporte: Optional[SupportAgent] = None,
     top_k: int = 3,
+    historico_atendimento: str | None = None,
 ) -> str:
     return executar_fluxo_suporte_detalhado(
         mensagem_usuario=mensagem_usuario,
@@ -77,6 +79,7 @@ def executar_fluxo_suporte(
         db=db,
         agente_suporte=agente_suporte,
         top_k=top_k,
+        historico_atendimento=historico_atendimento,
     ).resposta
 
 
@@ -87,6 +90,7 @@ def executar_fluxo_suporte_detalhado(
     db: Optional[VectorDatabaseHelper] = None,
     agente_suporte: Optional[SupportAgent] = None,
     top_k: int = 3,
+    historico_atendimento: str | None = None,
 ) -> FluxoSuporteResultado:
     if not mensagem_usuario or not mensagem_usuario.strip():
         raise ValueError("A mensagem do usuário não pode ser vazia.")
@@ -110,6 +114,7 @@ def executar_fluxo_suporte_detalhado(
         mensagem_usuario=mensagem_usuario,
         contexto_wiki=contexto_wiki,
         classificacao=classificacao,
+        historico_atendimento=historico_atendimento,
     )
 
     return FluxoSuporteResultado(
@@ -118,6 +123,7 @@ def executar_fluxo_suporte_detalhado(
         query_busca=query_busca,
         documentos=documentos,
         contexto_wiki=contexto_wiki,
+        historico_atendimento=historico_atendimento or "",
     )
 
 

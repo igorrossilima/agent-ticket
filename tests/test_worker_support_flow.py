@@ -2,6 +2,7 @@ import unittest
 
 from RAG.structure import DocumentoRAG
 from Workers.main import (
+    executar_fluxo_suporte_detalhado,
     executar_fluxo_suporte,
     formatar_contexto_documentos,
     montar_query_busca,
@@ -46,11 +47,13 @@ class FakeSupportAgent:
         self.mensagem_usuario = None
         self.contexto_wiki = None
         self.classificacao = None
+        self.historico_atendimento = None
 
-    def executar(self, mensagem_usuario, contexto_wiki, classificacao):
+    def executar(self, mensagem_usuario, contexto_wiki, classificacao, historico_atendimento=None):
         self.mensagem_usuario = mensagem_usuario
         self.contexto_wiki = contexto_wiki
         self.classificacao = classificacao
+        self.historico_atendimento = historico_atendimento
         return "Resposta final ao cliente."
 
 
@@ -120,6 +123,7 @@ class WorkerSupportFlowTest(unittest.TestCase):
             db=db,
             agente_suporte=agente_suporte,
             top_k=5,
+            historico_atendimento="Cliente: Primeira mensagem.",
         )
 
         self.assertEqual(resposta, "Resposta final ao cliente.")
@@ -128,6 +132,22 @@ class WorkerSupportFlowTest(unittest.TestCase):
         self.assertIn("excesso de velocidade", db.query_usuario)
         self.assertIn("O sistema registra eventos", agente_suporte.contexto_wiki)
         self.assertEqual(agente_suporte.classificacao["categoria"], "suporte")
+        self.assertEqual(agente_suporte.historico_atendimento, "Cliente: Primeira mensagem.")
+
+    def test_executar_fluxo_suporte_detalhado_retorna_documentos_e_historico(self):
+        resultado = executar_fluxo_suporte_detalhado(
+            mensagem_usuario="Como vejo eventos de velocidade?",
+            provedor_ia="fake",
+            classificador=FakeClassifier(),
+            db=FakeDatabase(),
+            agente_suporte=FakeSupportAgent(),
+            top_k=2,
+            historico_atendimento="Agente IA: Resposta anterior.",
+        )
+
+        self.assertEqual(resultado.resposta, "Resposta final ao cliente.")
+        self.assertEqual(resultado.historico_atendimento, "Agente IA: Resposta anterior.")
+        self.assertEqual(resultado.documentos[0].id, "teste-wiki-chunk-1")
 
 
 if __name__ == "__main__":

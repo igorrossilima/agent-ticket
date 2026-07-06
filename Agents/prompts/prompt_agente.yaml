@@ -69,6 +69,9 @@ agente_suporte:
     Classificação do atendimento:
     {classificacao}
 
+    Histórico recente do atendimento:
+    {historico_atendimento}
+
     Contexto da wiki:
     {contexto_wiki}
 

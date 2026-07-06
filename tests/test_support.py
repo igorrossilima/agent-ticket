@@ -27,6 +27,7 @@ class SupportAgentTest(unittest.TestCase):
         self.assertIn("{mensagem_usuario}", prompt["user"])
         self.assertIn("{contexto_wiki}", prompt["user"])
         self.assertIn("{classificacao}", prompt["user"])
+        self.assertIn("{historico_atendimento}", prompt["user"])
 
     def test_rejeita_mensagem_vazia(self):
         with patch("Agents.base.LLMFactory.criar_modelo", return_value=FakeModel()):
@@ -49,12 +50,14 @@ class SupportAgentTest(unittest.TestCase):
             mensagem_usuario="Como vejo eventos?",
             contexto_wiki="Eventos aparecem no relatório.",
             classificacao={"categoria": "suporte"},
+            historico_atendimento="Cliente: Quero ver eventos.",
         )
 
         self.assertEqual(resposta, "Resposta baseada no contexto da wiki.")
         self.assertIn("Como vejo eventos?", modelo.prompt_usuario)
         self.assertIn("Eventos aparecem no relatório.", modelo.prompt_usuario)
         self.assertIn('"categoria": "suporte"', modelo.prompt_usuario)
+        self.assertIn("Cliente: Quero ver eventos.", modelo.prompt_usuario)
 
 if __name__ == "__main__":
     unittest.main()

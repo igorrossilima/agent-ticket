@@ -125,9 +125,37 @@ class TicketService:
         self.session.refresh(ticket)
         return ticket
 
-    def aplicar_classificacao_agente(self, ticket_id: UUID, classificacao: dict | None) -> Ticket:
-        payload = self._payload_classificacao_agente(classificacao or {})
+    def aplicar_classificacao_agente(
+        self,
+        ticket_id: UUID,
+        classificacao: dict | None,
+        *,
+        requires_human: bool = False,
+    ) -> Ticket:
+        payload = self._payload_classificacao_agente(
+            classificacao or {},
+            requires_human=requires_human,
+        )
         return self.atualizar_classificacao(ticket_id, payload)
+
+    def marcar_handoff_humano(self, ticket_id: UUID) -> Ticket:
+        ticket = self.obter_ticket(ticket_id)
+
+        ticket.requires_human = True
+        ticket.status = "pending"
+        ticket.closed_at = None
+        self.session.flush()
+        self.session.refresh(ticket)
+        return ticket
+
+    def listar_mensagens_ticket(self, ticket_id: UUID, *, limit: int | None = None) -> list[TicketMessage]:
+        self.obter_ticket(ticket_id)
+        mensagens = self.messages.listar_por_ticket(ticket_id)
+
+        if limit is not None and limit > 0:
+            return mensagens[-limit:]
+
+        return mensagens
 
     def adicionar_mensagem(self, payload: TicketMessageCreate) -> TicketMessage:
         self._validar_valor_controlado(payload.sender_type, MESSAGE_SENDER_TYPES, "sender_type")
@@ -192,7 +220,11 @@ class TicketService:
             raise ValorTicketInvalidoError(f"Valor invalido para {campo}: {value}.")
 
     @staticmethod
-    def _payload_classificacao_agente(classificacao: dict) -> TicketClassificationUpdate:
+    def _payload_classificacao_agente(
+        classificacao: dict,
+        *,
+        requires_human: bool = False,
+    ) -> TicketClassificationUpdate:
         category = str(classificacao.get("categoria") or DEFAULT_TICKET_CATEGORY).strip()
         if category not in TICKET_CATEGORIES:
             category = DEFAULT_TICKET_CATEGORY
@@ -204,7 +236,7 @@ class TicketService:
                 classificacao.get("confianca")
             ),
             classification_reason=classificacao.get("justificativa"),
-            requires_human=False,
+            requires_human=requires_human,
         )
 
     @staticmethod
