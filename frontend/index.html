@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teste Agent Ticket</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div>
+          <h1>Teste Agent Ticket</h1>
+          <p>Frontend local minimo para testar a API.</p>
+        </div>
+        <button id="healthButton" type="button">Testar health</button>
+      </header>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>1. Auth</h2>
+          <div class="row">
+            <label>
+              Nome
+              <input id="authName" value="Teste 01" />
+            </label>
+            <label>
+              Role
+              <select id="authRole">
+                <option value="admin">admin</option>
+                <option value="agent">agent</option>
+                <option value="customer_success">customer_success</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Email
+            <input id="authEmail" value="teste@teste.com" />
+          </label>
+          <label>
+            Senha
+            <input id="authPassword" type="password" value="teste123" />
+          </label>
+          <div class="actions">
+            <button id="registerButton" type="button">Registrar</button>
+            <button id="loginButton" type="button">Login</button>
+          </div>
+          <label>
+            Token
+            <textarea id="token" rows="5" placeholder="Token gerado no login/register"></textarea>
+          </label>
+        </article>
+
+        <article class="panel">
+          <h2>2. Customer</h2>
+          <label>
+            Nome
+            <input id="customerName" value="Cliente Teste" />
+          </label>
+          <label>
+            Email
+            <input id="customerEmail" value="cliente@teste.com" />
+          </label>
+          <div class="row">
+            <label>
+              Telefone
+              <input id="customerPhone" value="5512991070780" />
+            </label>
+            <label>
+              Documento
+              <input id="customerDocument" value="1234567890" />
+            </label>
+          </div>
+          <div class="actions">
+            <button id="createCustomerButton" type="button">Criar customer</button>
+            <button id="listCustomersButton" type="button">Listar customers</button>
+          </div>
+          <label>
+            Customer ID
+            <input id="customerId" placeholder="Preenchido ao criar customer" />
+          </label>
+        </article>
+
+        <article class="panel wide">
+          <h2>3. Chat</h2>
+          <label>
+            Mensagem
+            <textarea id="chatMessage" rows="3">Como consultar eventos de excesso de velocidade?</textarea>
+          </label>
+          <div class="row">
+            <label>
+              Top K
+              <input id="topK" type="number" min="1" max="10" value="5" />
+            </label>
+            <label>
+              Provedor
+              <select id="provider">
+                <option value="openai">openai</option>
+                <option value="deepseek">deepseek</option>
+                <option value="gemini">gemini</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Ticket ID
+            <input id="ticketId" placeholder="Opcional na primeira mensagem" />
+          </label>
+          <div class="actions">
+            <button id="chatButton" type="button">Enviar chat</button>
+            <button id="getTicketButton" type="button">Buscar historico</button>
+          </div>
+        </article>
+
+        <article class="panel wide">
+          <h2>Resposta</h2>
+          <pre id="output">{}</pre>
+        </article>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
