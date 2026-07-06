@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from Customers import models as customer_models  # noqa: F401
@@ -39,3 +39,7 @@ class UserRepository:
     def obter_por_email(self, email: str) -> User | None:
         statement = select(User).where(User.email == email)
         return self.session.execute(statement).scalar_one_or_none()
+
+    def contar(self) -> int:
+        statement = select(func.count()).select_from(User)
+        return self.session.execute(statement).scalar_one()

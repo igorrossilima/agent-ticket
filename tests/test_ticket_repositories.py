@@ -122,10 +122,17 @@ def test_repositories_buscam_por_email_e_listam_por_status():
 
         tickets.atualizar_status(ticket, "pending")
         tickets_por_status = tickets.listar_por_status("pending")
+        tickets_por_atendente = tickets.listar(assigned_user_id=user.id)
+        tickets_por_status_e_atendente = tickets.listar(
+            status="pending",
+            assigned_user_id=user.id,
+        )
 
         assert users.obter_por_email(user.email).id == user.id
         assert customers.obter_por_email(customer.email).id == customer.id
         assert customers.obter_por_documento(customer.document).id == customer.id
         assert ticket.id in [item.id for item in tickets_por_status]
+        assert ticket.id in [item.id for item in tickets_por_atendente]
+        assert [item.id for item in tickets_por_status_e_atendente] == [ticket.id]
     finally:
         next(session_generator, None)

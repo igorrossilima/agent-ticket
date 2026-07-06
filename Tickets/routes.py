@@ -51,13 +51,26 @@ def criar_ticket(
 
 @router.get("", response_model=list[TicketRead])
 def listar_tickets(
-    status_ticket: str = Query(default=DEFAULT_TICKET_STATUS, alias="status"),
+    status_ticket: str | None = Query(default=None, alias="status"),
+    assigned_user_id: UUID | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     service: TicketService = Depends(obter_ticket_service),
 ) -> list[TicketRead]:
-    _validar_status_query(status_ticket)
-    return service.listar_por_status(status_ticket, limit=limit, offset=offset)
+    status_filtro = status_ticket
+
+    if status_filtro is None and assigned_user_id is None:
+        status_filtro = DEFAULT_TICKET_STATUS
+
+    if status_filtro:
+        _validar_status_query(status_filtro)
+
+    return service.listar_tickets(
+        status=status_filtro,
+        assigned_user_id=assigned_user_id,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/{ticket_id}", response_model=TicketDetailRead)

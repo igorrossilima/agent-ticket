@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from Customers.repository import CustomerRepository
 from Shared.constants import (
+    ASSIGNABLE_TICKET_ROLES,
     DEFAULT_TICKET_CATEGORY,
+    DEFAULT_TICKET_STATUS,
     MESSAGE_SENDER_TYPES,
     TICKET_CATEGORIES,
     TICKET_PRIORITIES,
@@ -60,8 +62,8 @@ class TicketService:
         if not self.customers.obter_por_id(payload.customer_id):
             raise CustomerNaoEncontradoError("Cliente do ticket nao encontrado.")
 
-        if payload.assigned_user_id and not self.users.obter_por_id(payload.assigned_user_id):
-            raise UserNaoEncontradoError("Usuario atribuido ao ticket nao encontrado.")
+        if payload.assigned_user_id:
+            self._obter_usuario_atribuivel(payload.assigned_user_id)
 
         return self.tickets.criar(
             customer_id=payload.customer_id,
@@ -90,6 +92,24 @@ class TicketService:
         self._validar_valor_controlado(status, TICKET_STATUSES, "status")
         return self.tickets.listar_por_status(status, limit=limit, offset=offset)
 
+    def listar_tickets(
+        self,
+        *,
+        status: str | None = DEFAULT_TICKET_STATUS,
+        assigned_user_id: UUID | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Ticket]:
+        if status:
+            self._validar_valor_controlado(status, TICKET_STATUSES, "status")
+
+        return self.tickets.listar(
+            status=status,
+            assigned_user_id=assigned_user_id,
+            limit=limit,
+            offset=offset,
+        )
+
     def atualizar_status(self, ticket_id: UUID, payload: TicketStatusUpdate) -> Ticket:
         self._validar_valor_controlado(payload.status, TICKET_STATUSES, "status")
         ticket = self.obter_ticket(ticket_id)
@@ -103,8 +123,8 @@ class TicketService:
     def atribuir_usuario(self, ticket_id: UUID, payload: TicketAssignmentUpdate) -> Ticket:
         ticket = self.obter_ticket(ticket_id)
 
-        if payload.assigned_user_id and not self.users.obter_por_id(payload.assigned_user_id):
-            raise UserNaoEncontradoError("Usuario atribuido ao ticket nao encontrado.")
+        if payload.assigned_user_id:
+            self._obter_usuario_atribuivel(payload.assigned_user_id)
 
         return self.tickets.atribuir_usuario(ticket, payload.assigned_user_id)
 
@@ -218,6 +238,19 @@ class TicketService:
     def _validar_valor_controlado(value: str, valores_validos: tuple[str, ...], campo: str) -> None:
         if value not in valores_validos:
             raise ValorTicketInvalidoError(f"Valor invalido para {campo}: {value}.")
+
+    def _obter_usuario_atribuivel(self, user_id: UUID):
+        user = self.users.obter_por_id(user_id)
+
+        if not user or not user.is_active:
+            raise UserNaoEncontradoError("Usuario atribuido ao ticket nao encontrado.")
+
+        if user.role not in ASSIGNABLE_TICKET_ROLES:
+            raise ValorTicketInvalidoError(
+                "Ticket so pode ser atribuido a agent ou customer_success."
+            )
+
+        return user
 
     @staticmethod
     def _payload_classificacao_agente(

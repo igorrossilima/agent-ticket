@@ -26,17 +26,41 @@ def obter_auth_service(
     return AuthService(session)
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+def _exigir_admin(
+    authorization: str | None = Header(default=None),
+    session: Session = Depends(obter_sessao_db),
+) -> UsuarioAutenticado:
+    token = _extrair_token_bearer(authorization)
+
+    try:
+        usuario = TokenService().identificar_usuario(token, session)
+    except TokenInvalidoError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(erro),
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from erro
+
+    if usuario.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas administradores podem criar usuarios internos.",
+        )
+
+    return usuario
+
+
+@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def registrar(
     payload: RegisterRequest,
+    _admin: UsuarioAutenticado = Depends(_exigir_admin),
     service: AuthService = Depends(obter_auth_service),
-) -> TokenResponse:
+) -> UserRead:
     try:
         user = service.registrar_usuario(payload)
-        access_token = service.criar_token(user)
         service.session.commit()
         service.session.refresh(user)
-        return TokenResponse(access_token=access_token, user=user)
+        return user
     except AuthServiceError as erro:
         service.session.rollback()
         raise _converter_erro_auth(erro) from erro

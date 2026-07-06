@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 from Api.main import app
 from Auth.service import gerar_hash_senha
+from Auth.token_service import TokenService
 from Postgres.config import obter_config_postgres
 from Postgres.session import obter_sessao_db
 from Users.repository import UserRepository
@@ -60,13 +61,27 @@ def chamar_api(method, path, json=None, headers=None):
     return asyncio.run(executar())
 
 
+def criar_auth_headers(session, *, role="admin"):
+    sufixo = uuid4().hex
+    user = UserRepository(session).criar(
+        name=f"Usuario {role}",
+        email=f"auth-{role}-{sufixo}@example.com",
+        password_hash=gerar_hash_senha("senha-admin-123"),
+        role=role,
+    )
+    token = TokenService().criar_access_token(user)
+    return {"Authorization": f"Bearer {token}"}
+
+
 def test_auth_register_login_e_me(db_session):
     sufixo = uuid4().hex
     email = f"auth-{sufixo}@example.com"
+    auth_headers = criar_auth_headers(db_session, role="admin")
 
     resposta_register = chamar_api(
         "POST",
         "/auth/register",
+        headers=auth_headers,
         json={
             "name": "  Usuario Auth  ",
             "email": f"  {email.upper()}  ",
@@ -77,10 +92,9 @@ def test_auth_register_login_e_me(db_session):
 
     assert resposta_register.status_code == 201
     body_register = resposta_register.json()
-    assert body_register["token_type"] == "bearer"
-    assert body_register["access_token"]
-    assert body_register["user"]["email"] == email
-    assert body_register["user"]["role"] == "customer_success"
+    assert body_register["email"] == email
+    assert body_register["role"] == "customer_success"
+    assert "access_token" not in body_register
 
     resposta_login = chamar_api(
         "POST",
@@ -108,6 +122,7 @@ def test_auth_register_login_e_me(db_session):
 def test_auth_register_rejeita_email_duplicado(db_session):
     sufixo = uuid4().hex
     email = f"duplicado-{sufixo}@example.com"
+    auth_headers = criar_auth_headers(db_session, role="admin")
     UserRepository(db_session).criar(
         name="Usuario Existente",
         email=email,
@@ -117,6 +132,7 @@ def test_auth_register_rejeita_email_duplicado(db_session):
     resposta = chamar_api(
         "POST",
         "/auth/register",
+        headers=auth_headers,
         json={
             "name": "Novo Usuario",
             "email": email,
@@ -126,6 +142,31 @@ def test_auth_register_rejeita_email_duplicado(db_session):
 
     assert resposta.status_code == 409
     assert "E-mail" in resposta.json()["detail"]
+
+
+def test_auth_register_exige_admin(db_session):
+    resposta_sem_token = chamar_api(
+        "POST",
+        "/auth/register",
+        json={
+            "name": "Sem Token",
+            "email": f"sem-token-{uuid4().hex}@example.com",
+            "password": "senha-nova-123",
+        },
+    )
+    resposta_agent = chamar_api(
+        "POST",
+        "/auth/register",
+        headers=criar_auth_headers(db_session, role="agent"),
+        json={
+            "name": "Sem Permissao",
+            "email": f"sem-permissao-{uuid4().hex}@example.com",
+            "password": "senha-nova-123",
+        },
+    )
+
+    assert resposta_sem_token.status_code == 401
+    assert resposta_agent.status_code == 403
 
 
 def test_auth_login_rejeita_credenciais_invalidas(db_session):

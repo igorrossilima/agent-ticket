@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -z "${BOOTSTRAP_ADMIN_NAME:-}" ]; then
+  read -r -p "Nome do admin inicial: " BOOTSTRAP_ADMIN_NAME
+fi
+
+if [ -z "${BOOTSTRAP_ADMIN_EMAIL:-}" ]; then
+  read -r -p "E-mail do admin inicial: " BOOTSTRAP_ADMIN_EMAIL
+fi
+
+if [ -z "${BOOTSTRAP_ADMIN_PASSWORD:-}" ]; then
+  read -r -s -p "Senha do admin inicial: " BOOTSTRAP_ADMIN_PASSWORD
+  printf "\n"
+fi
+
+docker exec \
+  -e BOOTSTRAP_ADMIN_NAME="$BOOTSTRAP_ADMIN_NAME" \
+  -e BOOTSTRAP_ADMIN_EMAIL="$BOOTSTRAP_ADMIN_EMAIL" \
+  -e BOOTSTRAP_ADMIN_PASSWORD="$BOOTSTRAP_ADMIN_PASSWORD" \
+  agent_ticket_api \
+  python -m Auth.commands.criar_admin

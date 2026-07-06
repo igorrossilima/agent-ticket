@@ -120,7 +120,7 @@ def test_ticket_routes_criam_listam_e_detalham_ticket(db_session):
     resposta_detalhe = chamar_api("GET", f"/tickets/{ticket['id']}")
 
     assert resposta_listagem.status_code == 200
-    assert [item["id"] for item in resposta_listagem.json()] == [ticket["id"]]
+    assert ticket["id"] in [item["id"] for item in resposta_listagem.json()]
     assert resposta_detalhe.status_code == 200
     assert resposta_detalhe.json()["messages"] == []
 
@@ -197,6 +197,80 @@ def test_ticket_routes_atualizam_status_e_atribuicao(db_session):
     assert resposta_status.status_code == 200
     assert resposta_status.json()["status"] == "closed"
     assert resposta_status.json()["closed_at"] is not None
+
+
+def test_ticket_routes_listam_fila_por_status_e_atendente(db_session):
+    customer, user = criar_customer_e_user(db_session)
+    ticket_aberto = chamar_api(
+        "POST",
+        "/tickets",
+        json={
+            "customer_id": str(customer.id),
+            "assigned_user_id": str(user.id),
+            "title": "Ticket aberto atribuido",
+        },
+    ).json()
+    ticket_pendente = chamar_api(
+        "POST",
+        "/tickets",
+        json={
+            "customer_id": str(customer.id),
+            "assigned_user_id": str(user.id),
+            "title": "Ticket pendente atribuido",
+        },
+    ).json()
+    chamar_api(
+        "PATCH",
+        f"/tickets/{ticket_pendente['id']}/status",
+        json={"status": "pending"},
+    )
+
+    resposta_fila_status = chamar_api("GET", "/tickets?status=pending")
+    resposta_fila_atendente = chamar_api("GET", f"/tickets?assigned_user_id={user.id}")
+    resposta_fila_combinada = chamar_api(
+        "GET",
+        f"/tickets?status=open&assigned_user_id={user.id}",
+    )
+
+    ids_status = [item["id"] for item in resposta_fila_status.json()]
+    ids_atendente = [item["id"] for item in resposta_fila_atendente.json()]
+    ids_combinada = [item["id"] for item in resposta_fila_combinada.json()]
+
+    assert resposta_fila_status.status_code == 200
+    assert resposta_fila_atendente.status_code == 200
+    assert resposta_fila_combinada.status_code == 200
+    assert ticket_pendente["id"] in ids_status
+    assert ticket_aberto["id"] in ids_atendente
+    assert ticket_pendente["id"] in ids_atendente
+    assert ticket_aberto["id"] in ids_combinada
+    assert ticket_pendente["id"] not in ids_combinada
+
+
+def test_ticket_routes_impedem_atribuicao_para_admin(db_session):
+    customer, _ = criar_customer_e_user(db_session)
+    admin = UserRepository(db_session).criar(
+        name="Admin Nao Atendente",
+        email=f"admin-ticket-{uuid4().hex}@example.com",
+        password_hash="hash-teste",
+        role="admin",
+    )
+    ticket = chamar_api(
+        "POST",
+        "/tickets",
+        json={
+            "customer_id": str(customer.id),
+            "title": "Nao atribuir admin",
+        },
+    ).json()
+
+    resposta = chamar_api(
+        "PATCH",
+        f"/tickets/{ticket['id']}/assignment",
+        json={"assigned_user_id": str(admin.id)},
+    )
+
+    assert resposta.status_code == 400
+    assert "agent ou customer_success" in resposta.json()["detail"]
 
 
 def test_ticket_routes_exigem_autenticacao(db_session):

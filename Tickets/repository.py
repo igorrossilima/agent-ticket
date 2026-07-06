@@ -56,15 +56,31 @@ class TicketRepository:
 
         return self.session.execute(statement).scalar_one_or_none()
 
-    def listar_por_status(self, status: str, *, limit: int = 50, offset: int = 0) -> list[Ticket]:
-        statement = (
-            select(Ticket)
-            .where(Ticket.status == status)
-            .order_by(Ticket.last_message_at.desc().nullslast(), Ticket.created_at.desc())
-            .limit(limit)
-            .offset(offset)
-        )
+    def listar(
+        self,
+        *,
+        status: str | None = None,
+        assigned_user_id: UUID | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Ticket]:
+        statement = select(Ticket)
+
+        if status:
+            statement = statement.where(Ticket.status == status)
+
+        if assigned_user_id:
+            statement = statement.where(Ticket.assigned_user_id == assigned_user_id)
+
+        statement = statement.order_by(
+            Ticket.last_message_at.desc().nullslast(),
+            Ticket.created_at.desc(),
+        ).limit(limit).offset(offset)
+
         return list(self.session.execute(statement).scalars().all())
+
+    def listar_por_status(self, status: str, *, limit: int = 50, offset: int = 0) -> list[Ticket]:
+        return self.listar(status=status, limit=limit, offset=offset)
 
     def listar_por_cliente(self, customer_id: UUID, *, limit: int = 50, offset: int = 0) -> list[Ticket]:
         statement = (

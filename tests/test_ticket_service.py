@@ -176,6 +176,35 @@ def test_ticket_service_atualiza_status_e_atribuicao():
         next(session_generator, None)
 
 
+def test_ticket_service_impede_atribuicao_para_admin():
+    session_generator = criar_sessao_teste()
+    session = next(session_generator)
+
+    try:
+        _, customer = criar_dados_base(session)
+        admin = UserRepository(session).criar(
+            name="Admin Service",
+            email=f"admin-service-{uuid4().hex}@example.com",
+            password_hash="hash-teste",
+            role="admin",
+        )
+        service = TicketService(session)
+        ticket = service.criar_ticket(
+            TicketCreate(
+                customer_id=customer.id,
+                title="Atribuicao invalida",
+            )
+        )
+
+        with pytest.raises(ValorTicketInvalidoError):
+            service.atribuir_usuario(
+                ticket.id,
+                TicketAssignmentUpdate(assigned_user_id=admin.id),
+            )
+    finally:
+        next(session_generator, None)
+
+
 def test_ticket_service_valida_referencias_e_valores():
     session_generator = criar_sessao_teste()
     session = next(session_generator)

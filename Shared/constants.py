@@ -1,4 +1,5 @@
 USER_ROLES = ("admin", "agent", "customer_success")
+ASSIGNABLE_TICKET_ROLES = ("agent", "customer_success")
 
 TICKET_STATUSES = ("open", "in_progress", "pending", "resolved", "closed")
 DEFAULT_TICKET_STATUS = "open"
