@@ -1,41 +1,35 @@
-# Frontend de teste
+# Frontend React
 
-Frontend descartavel para testar a API local sem Postman.
+Aplicacao React/Vite com uma tela inicial de `Visao Geral`.
 
-## Como rodar
-
-Com a API ja rodando no Docker:
+## Desenvolvimento
 
 ```bash
-python3 frontend/server.py
+cd frontend
+npm install
+npm run dev
 ```
 
-Abra no navegador:
+Abra:
 
 ```txt
-http://localhost:5500
+http://localhost:5501
 ```
 
-O servidor local tambem faz proxy para a API em `http://localhost:8000`, evitando problema de CORS no navegador.
+O Vite faz proxy de `/api/*` para `http://localhost:8000`.
 
-## Como interpretar
-
-- `Criar user` chama `/auth/register` e exige token de admin. Ele cria um operador interno, mas nao faz login automatico.
-- `Login` chama `/auth/login`, salva o token e mostra o operador em `Estado do fluxo`.
-- `Validar token` chama `/auth/me` e mostra qual operador esta associado ao token atual.
-- `Criar customer` cria o cliente final que abre o ticket.
-- `Enviar chat` chama `/chat` e depois busca `/tickets/{ticket_id}` para mostrar status, categoria, handoff, classificacao e documentos RAG usados.
-- `Buscar historico` atualiza o detalhe do ticket aberto.
-- `Fila open`, `Fila pending` e `Minha fila` testam os filtros operacionais de tickets.
-
-Se precisar trocar a porta:
+## Build estatico
 
 ```bash
-FRONTEND_PORT=5501 python3 frontend/server.py
+cd frontend
+npm run build
+python3 server.py
 ```
 
-Se a API estiver em outra URL:
+O `server.py` serve os arquivos gerados em `frontend/dist` e continua fazendo proxy de `/api/*`.
+
+Para trocar a URL da API:
 
 ```bash
-API_BASE_URL=http://localhost:8001 python3 frontend/server.py
+API_BASE_URL=http://localhost:8001 npm run dev
 ```

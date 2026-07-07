@@ -10,6 +10,11 @@ from urllib.request import Request, urlopen
 ROOT_DIR = Path(__file__).resolve().parent
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/")
 PORT = int(os.getenv("FRONTEND_PORT", "5500"))
+ROUTE_ALIASES = {
+    "/": "index.html",
+    "/geral": "index.html",
+    "/visao-geral": "index.html",
+}
 
 
 class FrontendHandler(BaseHTTPRequestHandler):
@@ -19,6 +24,9 @@ class FrontendHandler(BaseHTTPRequestHandler):
             return
 
         self._serve_static()
+
+    def do_HEAD(self):
+        self._serve_static(head_only=True)
 
     def do_POST(self):
         self._proxy()
@@ -33,12 +41,14 @@ class FrontendHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
         self.end_headers()
 
-    def _serve_static(self):
+    def _serve_static(self, *, head_only=False):
         path = self.path.split("?", 1)[0]
-        relative_path = "index.html" if path in ("", "/") else path.lstrip("/")
-        file_path = (ROOT_DIR / relative_path).resolve()
+        normalized_path = path.rstrip("/") if path != "/" else path
+        relative_path = ROUTE_ALIASES.get(normalized_path, path.lstrip("/") or "index.html")
+        static_dir = _static_dir()
+        file_path = (static_dir / relative_path).resolve()
 
-        if not str(file_path).startswith(str(ROOT_DIR)) or not file_path.is_file():
+        if not _is_safe_static_path(file_path, static_dir) or not file_path.is_file():
             self.send_error(404)
             return
 
@@ -49,7 +59,9 @@ class FrontendHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(content)))
         self.end_headers()
-        self.wfile.write(content)
+
+        if not head_only:
+            self.wfile.write(content)
 
     def _proxy(self):
         if not self.path.startswith("/api/"):
@@ -122,10 +134,25 @@ class FrontendHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
+def _static_dir() -> Path:
+    dist_dir = ROOT_DIR / "dist"
+    return dist_dir if dist_dir.is_dir() else ROOT_DIR
+
+
+def _is_safe_static_path(file_path: Path, static_dir: Path) -> bool:
+    try:
+        file_path.relative_to(static_dir.resolve())
+    except ValueError:
+        return False
+
+    return True
+
+
 def main():
     server = ThreadingHTTPServer(("0.0.0.0", PORT), FrontendHandler)
     print(f"Frontend: http://localhost:{PORT}")
     print(f"API proxy: {API_BASE_URL}")
+    print(f"Static files: {_static_dir()}")
     server.serve_forever()
 
 
