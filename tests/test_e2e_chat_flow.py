@@ -127,7 +127,6 @@ class ChatE2ETest(unittest.TestCase):
                         "mensagem": "Como vejo eventos de velocidade?",
                         "customer_id": str(self.customer.id),
                         "top_k": 2,
-                        "provedor_ia": "openai",
                     },
                 )
 

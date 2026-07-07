@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable
 
+from AI.settings import obter_ai_settings
 from Agents.classifier import Classifier
 from Customers.models import Customer
 from Customers.repository import CustomerRepository
@@ -38,6 +39,7 @@ class ChatwootIntegrationService:
         self.session = session
         self.customers = CustomerRepository(session)
         self.tickets = TicketService(session)
+        self.provedor_ia = obter_ai_settings().ai_provider
 
     def processar_mensagem(
         self,
@@ -46,7 +48,7 @@ class ChatwootIntegrationService:
         executor_fluxo: FluxoSuporteExecutor,
     ) -> ChatwootProcessResult:
         customer = self._obter_ou_criar_customer(payload)
-        classificacao = Classifier(provedor_ia=payload.provedor_ia).executar(payload.message)
+        classificacao = Classifier(provedor_ia=self.provedor_ia).executar(payload.message)
         ticket, created_new_ticket = self._obter_ou_criar_ticket(
             payload=payload,
             customer=customer,
@@ -74,7 +76,7 @@ class ChatwootIntegrationService:
 
         resultado_fluxo = executor_fluxo(
             mensagem_usuario=payload.message,
-            provedor_ia=payload.provedor_ia,
+            provedor_ia=self.provedor_ia,
             top_k=payload.top_k,
             historico_atendimento=historico_atendimento,
             classificacao_inicial=classificacao,
@@ -98,7 +100,7 @@ class ChatwootIntegrationService:
                     classificacao=classificacao_resposta,
                     documentos_rag=documentos_rag,
                     top_k=payload.top_k,
-                    provedor_ia=payload.provedor_ia,
+                    provedor_ia=self.provedor_ia,
                     extra={
                         "external": self._metadata_externa(payload),
                     },

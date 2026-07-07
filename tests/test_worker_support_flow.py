@@ -3,7 +3,6 @@ import unittest
 from RAG.structure import DocumentoRAG
 from Workers.main import (
     executar_fluxo_suporte_detalhado,
-    executar_fluxo_suporte,
     formatar_contexto_documentos,
     montar_query_busca,
 )
@@ -111,12 +110,12 @@ class WorkerSupportFlowTest(unittest.TestCase):
     def test_formatar_contexto_documentos_sem_resultados(self):
         self.assertEqual(formatar_contexto_documentos([]), "")
 
-    def test_executar_fluxo_suporte_orquestra_classificacao_busca_e_resposta(self):
+    def test_executar_fluxo_suporte_detalhado_orquestra_classificacao_busca_e_resposta(self):
         classificador = FakeClassifier()
         db = FakeDatabase()
         agente_suporte = FakeSupportAgent()
 
-        resposta = executar_fluxo_suporte(
+        resultado = executar_fluxo_suporte_detalhado(
             mensagem_usuario="Como vejo eventos de velocidade?",
             provedor_ia="fake",
             classificador=classificador,
@@ -126,7 +125,7 @@ class WorkerSupportFlowTest(unittest.TestCase):
             historico_atendimento="Cliente: Primeira mensagem.",
         )
 
-        self.assertEqual(resposta, "Resposta final ao cliente.")
+        self.assertEqual(resultado.resposta, "Resposta final ao cliente.")
         self.assertEqual(classificador.mensagem, "Como vejo eventos de velocidade?")
         self.assertEqual(db.top_k, 5)
         self.assertIn("excesso de velocidade", db.query_usuario)

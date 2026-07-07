@@ -1,14 +1,14 @@
 from typing import Callable, Optional
-from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException
-from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
+from AI.settings import obter_ai_settings
 from Auth.models import UsuarioAutenticado
 from Auth.routes import router as auth_router
 from Auth.token_service import TokenInvalidoError, TokenService
+from Api.schemas import ChatRequest, ChatResponse
 from Customers.routes import router as customers_router
 from Integrations.Chatwoot.routes import router as chatwoot_router
 from Postgres.session import obter_sessao_db
@@ -43,47 +43,31 @@ app = FastAPI(
 )
 
 
-class ChatRequest(BaseModel):
-    mensagem: str
-    customer_id: UUID
-    ticket_id: UUID | None = None
-    title: str | None = Field(default=None, max_length=255)
-    top_k: int = Field(default=3, ge=1, le=10)
-    provedor_ia: str = "openai"
-
-
-class ChatResponse(BaseModel):
-    resposta: str
-    ticket_id: UUID
-    top_k: int
-    provedor_ia: str
-
-
 async def obter_executor_fluxo() -> FluxoSuporteExecutor:
     return executar_fluxo_suporte_detalhado
 
-# passo 5
-async def obter_token_service() -> TokenService:
-    return _token_service # retorna um token que foi buscado ou criado no passo 6
 
-# passo 3
+async def obter_token_service() -> TokenService:
+    return _token_service
+
+
 async def obter_usuario_autenticado(
     authorization: Optional[str] = Header(default=None),
-    token_service: TokenService = Depends(obter_token_service),# chama a função do passo 5
+    token_service: TokenService = Depends(obter_token_service),
     db_session: Session = Depends(obter_sessao_db),
 ) -> UsuarioAutenticado:
-    token = extrair_token_bearer(authorization) # chama o passo 4
+    token = extrair_token_bearer(authorization)
 
     try:
         return token_service.identificar_usuario(token, db_session)
-    except TokenInvalidoError as erro: # se o passo 4 nao retornar um token valido
+    except TokenInvalidoError as erro:
         raise HTTPException(
             status_code=401,
             detail=str(erro),
             headers={"WWW-Authenticate": "Bearer"},
         ) from erro
 
-# passo 4
+
 def extrair_token_bearer(authorization: Optional[str]) -> str:
     if not authorization:
         raise HTTPException(
@@ -108,12 +92,12 @@ def extrair_token_bearer(authorization: Optional[str]) -> str:
 async def health() -> dict[str, str]:
     return {"status": "ok"}
 
-# passo 1 e 13
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
     _usuario: UsuarioAutenticado = Depends(obter_usuario_autenticado),
-    executor_fluxo: FluxoSuporteExecutor = Depends(obter_executor_fluxo), # aqui amarra o fluxo do Workers para ser chamado depois
+    executor_fluxo: FluxoSuporteExecutor = Depends(obter_executor_fluxo),
     db_session: Session = Depends(obter_sessao_db),
 ) -> ChatResponse:
     mensagem = request.mensagem.strip() if request.mensagem else ""
@@ -124,8 +108,7 @@ async def chat(
             detail="A mensagem do usuário não pode ser vazia.",
         )
 
-    provedor_ia = request.provedor_ia.strip() if request.provedor_ia else "openai"
-    provedor_ia = provedor_ia or "openai"
+    provedor_ia = obter_ai_settings().ai_provider
     ticket_service = TicketService(db_session)
 
     try:
@@ -152,14 +135,14 @@ async def chat(
         db_session.rollback()
         raise _converter_erro_ticket_chat(erro) from erro
 
-    try: # aqui é pausado o fluxo da API e iniciado o fluxo do Worker
+    try:
         resultado_fluxo = await run_in_threadpool(
             executor_fluxo,
             mensagem_usuario=mensagem,
             provedor_ia=provedor_ia,
             top_k=request.top_k,
             historico_atendimento=historico_atendimento,
-        ) # aqui retorna para o fluxo da API
+        )
         resposta = extrair_resposta_fluxo(resultado_fluxo)
         classificacao = extrair_classificacao_fluxo(resultado_fluxo)
         documentos_rag = extrair_documentos_fluxo(resultado_fluxo)

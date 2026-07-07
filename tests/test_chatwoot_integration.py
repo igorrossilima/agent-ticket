@@ -127,7 +127,6 @@ def payload_base(**overrides):
         "contact_phone": f"+5511{sufixo[:8]}",
         "channel": "chatwoot",
         "top_k": 2,
-        "provedor_ia": "openai",
     }
     payload.update(overrides)
     return payload

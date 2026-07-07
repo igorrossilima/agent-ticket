@@ -117,7 +117,6 @@ class ApiChatTest(unittest.TestCase):
                 "mensagem": "Como identifico equipamento offline?",
                 "customer_id": str(customer.id),
                 "top_k": 4,
-                "provedor_ia": "openai",
             },
         )
 

@@ -15,10 +15,9 @@ class ChatwootMessageRequest(BaseModel):
     contact_phone: str | None = Field(default=None, max_length=30)
     channel: str = "chatwoot"
     top_k: int = Field(default=3, ge=1, le=10)
-    provedor_ia: str = "openai"
     force_new_ticket: bool = False
 
-    @field_validator("message", "conversation_id", "channel", "provedor_ia")
+    @field_validator("message", "conversation_id", "channel")
     @classmethod
     def limpar_texto_obrigatorio(cls, value: str) -> str:
         value = value.strip()

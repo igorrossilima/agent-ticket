@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 sys.path.append(str(Path(__file__).resolve().parent.parent)) # volta uma pagina para importar alguma coisa dentro de outro arquivo
 
+from AI.settings import obter_ai_settings
 from RAG.utils import VectorDatabaseHelper
 from RAG.structure import DocumentoRAG
 from Agents.classifier import Classifier
@@ -63,31 +64,9 @@ def formatar_contexto_documentos(documentos: List[DocumentoRAG]) -> str:
     return "\n\n".join(blocos)
 
 
-def executar_fluxo_suporte(
-    mensagem_usuario: str,
-    provedor_ia: str = "openai",
-    classificador: Optional[Classifier] = None,
-    db: Optional[VectorDatabaseHelper] = None,
-    agente_suporte: Optional[SupportAgent] = None,
-    top_k: int = 3,
-    historico_atendimento: str | None = None,
-    classificacao_inicial: Optional[Dict[str, Any]] = None,
-) -> str:
-    return executar_fluxo_suporte_detalhado(
-        mensagem_usuario=mensagem_usuario,
-        provedor_ia=provedor_ia,
-        classificador=classificador,
-        db=db,
-        agente_suporte=agente_suporte,
-        top_k=top_k,
-        historico_atendimento=historico_atendimento,
-        classificacao_inicial=classificacao_inicial,
-    ).resposta
-
-
 def executar_fluxo_suporte_detalhado(
     mensagem_usuario: str,
-    provedor_ia: str = "openai",
+    provedor_ia: str | None = None,
     classificador: Optional[Classifier] = None,
     db: Optional[VectorDatabaseHelper] = None,
     agente_suporte: Optional[SupportAgent] = None,
@@ -98,6 +77,7 @@ def executar_fluxo_suporte_detalhado(
     if not mensagem_usuario or not mensagem_usuario.strip():
         raise ValueError("A mensagem do usuário não pode ser vazia.")
 
+    provedor_ia = (provedor_ia or obter_ai_settings().ai_provider).strip()
     classificador = classificador or Classifier(provedor_ia=provedor_ia)
     db = db or VectorDatabaseHelper()
     agente_suporte = agente_suporte or SupportAgent(provedor_ia=provedor_ia)
@@ -128,9 +108,3 @@ def executar_fluxo_suporte_detalhado(
         contexto_wiki=contexto_wiki,
         historico_atendimento=historico_atendimento or "",
     )
-
-
-if __name__ == "__main__":
-    mensagem_teste = "Como faço para consultar eventos de excesso de velocidade?"
-    resposta = executar_fluxo_suporte(mensagem_teste, provedor_ia="openai")
-    print(resposta)
