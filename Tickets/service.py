@@ -196,6 +196,27 @@ class TicketService:
 
         return mensagens
 
+    def listar_mensagens(
+        self,
+        *,
+        ticket_id: UUID | None = None,
+        sender_type: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[TicketMessage]:
+        if ticket_id:
+            self.obter_ticket(ticket_id)
+
+        if sender_type:
+            self._validar_valor_controlado(sender_type, MESSAGE_SENDER_TYPES, "sender_type")
+
+        return self.messages.listar(
+            ticket_id=ticket_id,
+            sender_type=sender_type,
+            limit=limit,
+            offset=offset,
+        )
+
     def adicionar_mensagem(self, payload: TicketMessageCreate) -> TicketMessage:
         self._validar_valor_controlado(payload.sender_type, MESSAGE_SENDER_TYPES, "sender_type")
         ticket = self.obter_ticket(payload.ticket_id)

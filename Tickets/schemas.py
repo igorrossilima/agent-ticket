@@ -235,3 +235,7 @@ class TicketRead(BaseModel):
 
 class TicketDetailRead(TicketRead):
     messages: list[TicketMessageRead] = Field(default_factory=list)
+
+
+class TicketMessageInsightRead(TicketMessageRead):
+    ticket: TicketRead | None = None

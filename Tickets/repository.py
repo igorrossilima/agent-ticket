@@ -180,3 +180,27 @@ class TicketMessageRepository:
             .order_by(TicketMessage.created_at.asc())
         )
         return list(self.session.execute(statement).scalars().all())
+
+    def listar(
+        self,
+        *,
+        ticket_id: UUID | None = None,
+        sender_type: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[TicketMessage]:
+        statement = select(TicketMessage).options(selectinload(TicketMessage.ticket))
+
+        if ticket_id:
+            statement = statement.where(TicketMessage.ticket_id == ticket_id)
+
+        if sender_type:
+            statement = statement.where(TicketMessage.sender_type == sender_type)
+
+        statement = (
+            statement
+            .order_by(TicketMessage.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(self.session.execute(statement).scalars().all())

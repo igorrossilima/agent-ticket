@@ -11,6 +11,7 @@ from Tickets.schemas import (
     TicketDetailRead,
     TicketMessageCreate,
     TicketMessageCreateRequest,
+    TicketMessageInsightRead,
     TicketMessageRead,
     TicketRead,
     TicketStatusUpdate,
@@ -71,6 +72,25 @@ def listar_tickets(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/messages", response_model=list[TicketMessageInsightRead])
+def listar_mensagens_tickets(
+    ticket_id: UUID | None = Query(default=None),
+    sender_type: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    service: TicketService = Depends(obter_ticket_service),
+) -> list[TicketMessageInsightRead]:
+    try:
+        return service.listar_mensagens(
+            ticket_id=ticket_id,
+            sender_type=sender_type,
+            limit=limit,
+            offset=offset,
+        )
+    except TicketServiceError as erro:
+        raise _converter_erro_servico(erro) from erro
 
 
 @router.get("/{ticket_id}", response_model=TicketDetailRead)

@@ -169,6 +169,51 @@ def test_ticket_routes_adicionam_mensagem_e_atualizam_status(db_session):
     assert len(resposta_detalhe_ia.json()["messages"]) == 2
 
 
+def test_ticket_routes_listam_mensagens(db_session):
+    customer, _ = criar_customer_e_user(db_session)
+    ticket = chamar_api(
+        "POST",
+        "/tickets",
+        json={
+            "customer_id": str(customer.id),
+            "title": "Historico de mensagens",
+        },
+    ).json()
+    mensagem_cliente = chamar_api(
+        "POST",
+        f"/tickets/{ticket['id']}/messages",
+        json={
+            "sender_type": "customer",
+            "sender_customer_id": str(customer.id),
+            "body": "Primeira mensagem do cliente.",
+        },
+    ).json()
+    mensagem_ia = chamar_api(
+        "POST",
+        f"/tickets/{ticket['id']}/messages",
+        json={
+            "sender_type": "ai_agent",
+            "body": "Resposta automatizada.",
+            "metadata": {"classification": {"category": "suporte"}},
+        },
+    ).json()
+
+    resposta_listagem = chamar_api("GET", "/tickets/messages")
+    resposta_filtro = chamar_api("GET", "/tickets/messages?sender_type=ai_agent")
+
+    ids_listagem = [item["id"] for item in resposta_listagem.json()]
+    ids_filtro = [item["id"] for item in resposta_filtro.json()]
+
+    assert resposta_listagem.status_code == 200
+    assert resposta_filtro.status_code == 200
+    assert mensagem_cliente["id"] in ids_listagem
+    assert mensagem_ia["id"] in ids_listagem
+    assert mensagem_ia["id"] in ids_filtro
+    assert mensagem_cliente["id"] not in ids_filtro
+    assert resposta_filtro.json()[0]["metadata"]["classification"]["category"] == "suporte"
+    assert resposta_filtro.json()[0]["ticket"]["id"] == ticket["id"]
+
+
 def test_ticket_routes_atualizam_status_e_atribuicao(db_session):
     customer, user = criar_customer_e_user(db_session)
     resposta_criacao = chamar_api(
